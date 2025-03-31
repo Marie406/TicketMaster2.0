@@ -1,0 +1,4 @@
+idUser;nomUser;prenomUser;adresseUser;dateInscription;email;statutUser;ptsFidelite
+1;Dupont;Jean;10 rue des Lilas;2024-01-15;jean.dupont@email.com;VIP;200
+2;Martin;Sophie;5 avenue de la Paix;2023-12-10;sophie.martin@email.com;regular;50
+3;Lambert;Alex;3 boulevard Haussmann;2024-02-05;alex.lambert@email.com;VIP;300
