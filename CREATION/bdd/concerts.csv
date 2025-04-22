@@ -1,5 +1,5 @@
-idEvent;descriptionEvent
-1; Tournee mondiale de Stray Kids
-2; Concert de Billie Eilish
-3; Concert de Arctic Monkeys
-4; Tournee nationale Conan Gray
+idEvent;descriptionEvent;niveauDemandeAttendu
+1;Tournee mondiale de Stray Kids; 1.5
+2;Concert de Billie Eilish;1.3
+3;Concert de Arctic Monkeys;1
+4;Tournee nationale Conan Gray;1.1

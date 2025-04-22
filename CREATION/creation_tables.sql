@@ -31,7 +31,10 @@ CHECK (ptsFidelite>=0)
 
 CREATE TABLE Concert(
 idEvent SERIAL PRIMARY KEY, 
-descriptionEvent TEXT NOT NULL
+descriptionEvent TEXT NOT NULL,
+niveauDemandeAttendu NUMERIC(3,2) DEFAULT 1.00,
+CHECK (niveauDemandeAttendu >= 1), --pour garder des prix "raisonnables"
+CHECK (niveauDemandeAttendu < 2) 
 );
 
 CREATE TABLE Calendrier (
@@ -146,7 +149,8 @@ CREATE TABLE Reservation (
 CREATE TABLE Billet (
     idBillet SERIAL PRIMARY KEY,
     statutBillet VARCHAR(50) CHECK (statutBillet IN ('en vente', 'dans un panier', 'vendu')),
-    numSiege INT REFERENCES Siege(idSiege) ON DELETE CASCADE, --à modifier ds pdf
+    prix NUMERIC(10,2) NOT NULL,
+    idSiege INT REFERENCES Siege(idSiege) ON DELETE CASCADE, --à modifier ds pdf
     dateEvent DATE REFERENCES Calendrier(dateEvent) ON DELETE CASCADE,
     idEvent INT REFERENCES Concert(idEvent) ON DELETE CASCADE,
     idPanier INTEGER REFERENCES PreReservation(idPanier) ON DELETE SET NULL,

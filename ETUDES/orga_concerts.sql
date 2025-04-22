@@ -41,7 +41,7 @@ $$ LANGUAGE plpgsql;
 --organisation des concerts avec date, lieu et heure
 SELECT organiser_concert('Tournee japonaise de Taemin', DATE '2025-07-12', 17, TIME '19:30');
 SELECT organiser_concert('Tournee japonaise de Taemin', DATE '2025-07-19', 18, TIME '20:30');
-SELECT organiser_concert('Tournee japonaise de Taemin', DATE '2025-07-22', 19, TIME '20:00');
+SELECT organiser_concert('Tournee japonaise de Taemin', DATE '2025-07-22', 16, TIME '20:00');
 SELECT organiser_concert('Concert en France de Stray Kids', DATE '2025-07-22', 1, TIME '19:30');
 
 --ajouter un trigger qui à chaque insertion dans AvoirLieu nous crée des billets en faisannt
@@ -49,3 +49,5 @@ SELECT organiser_concert('Concert en France de Stray Kids', DATE '2025-07-22', 1
 -- ce nb sera la nb de billet mis en vente
 -- pour chaque idCategorie et idEvent on devrait definir une grille de prix, ce prix on le garde car on doit créer 
 --capaciteCategorie nb de billets avec ce prix et on associe chacun de ces billets à un siege de la dite categorie
+
+
