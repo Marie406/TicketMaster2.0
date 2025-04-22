@@ -30,7 +30,7 @@ CHECK (ptsFidelite>=0)
 );
 
 CREATE TABLE Concert(
-idEvent INT PRIMARY KEY, 
+idEvent SERIAL PRIMARY KEY, 
 descriptionEvent TEXT NOT NULL
 );
 
@@ -77,14 +77,15 @@ CREATE TABLE Grille (
 
 
 CREATE TABLE Artiste (
-    idArtiste VARCHAR(20) PRIMARY KEY,
+    idArtiste SERIAL PRIMARY KEY,
     nomArtiste VARCHAR(255) NOT NULL,
-    styleMusique VARCHAR(100)
+    styleMusique VARCHAR(100),
+    UNIQUE(nomArtiste)
 );
 
 CREATE TABLE Participe (
     idEvent INT REFERENCES Concert(idEvent) ON DELETE CASCADE,
-    idArtiste VARCHAR REFERENCES Artiste(idArtiste) ON DELETE CASCADE,
+    idArtiste INT REFERENCES Artiste(idArtiste) ON DELETE CASCADE,
     PRIMARY KEY (idEvent, idArtiste)
 );
 
