@@ -18,7 +18,7 @@ DROP TABLE IF EXISTS Utilisateur;
 
 
 CREATE TABLE Utilisateur(
-idUser SERIAL PRIMARY KEY, 
+idUser SERIAL PRIMARY KEY,
 nomUser VARCHAR(25) NOT NULL,
 prenomUser VARCHAR(25) NOT NULL,
 adresseUser TEXT,
@@ -30,11 +30,11 @@ CHECK (ptsFidelite>=0)
 );
 
 CREATE TABLE Concert(
-idEvent SERIAL PRIMARY KEY, 
+idEvent SERIAL PRIMARY KEY,
 descriptionEvent TEXT NOT NULL,
 niveauDemandeAttendu NUMERIC(3,2) DEFAULT 1.00,
 CHECK (niveauDemandeAttendu >= 1), --pour garder des prix "raisonnables"
-CHECK (niveauDemandeAttendu < 2) 
+CHECK (niveauDemandeAttendu < 2)
 );
 
 CREATE TABLE Calendrier (
@@ -45,15 +45,16 @@ CREATE TABLE Lieu(
 idLieu INT PRIMARY KEY,
 nomLieu VARCHAR(50) NOT NULL,
 adresseLieu VARCHAR NOT NULL,
-capaciteAccueil INTEGER NOT NULL 
+capaciteAccueil INTEGER NOT NULL
 CHECK (capaciteAccueil>0)
 );
 
 CREATE TABLE CategorieSiege(
-idCategorie INT PRIMARY KEY, 
-nomCategorie VARCHAR(100) NOT NULL,
+idCategorie INT PRIMARY KEY,
+nomCategorie VARCHAR(100) NOT NULL
+CHECK (nomCategorie IN 'CAT_1', 'CAT_2', 'CAT_3', 'CAT_4', 'CAT_5', 'FOSSE'),
 capaciteCategorie INTEGER NOT NULL
-CHECK (capaciteCategorie >0), 
+CHECK (capaciteCategorie >0),
 idLieu INT REFERENCES Lieu(idLieu) ON DELETE CASCADE
 );
 
@@ -144,7 +145,7 @@ CREATE TABLE Reservation (
     idTransaction INTEGER REFERENCES Transac(idTransaction) ON DELETE CASCADE
 );
 
---les ON DELETE SET NULL c'est parce que le billet continue d'exister même 
+--les ON DELETE SET NULL c'est parce que le billet continue d'exister même
 --si une session de vente est annulée ou si un panier est effacé de la BD
 CREATE TABLE Billet (
     idBillet SERIAL PRIMARY KEY,
