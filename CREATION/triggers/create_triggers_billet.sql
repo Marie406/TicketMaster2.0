@@ -24,7 +24,7 @@ BEGIN
     FOR UPDATE;
 
     -- Calculer le nombre total de billets déjà existants pour cet événement
-    SELECT COUNT(*) INTO total_billetstrigger_mis_panier_billet
+    SELECT COUNT(*) INTO total_billets
     FROM Billet
     WHERE idEvent = NEW.idEvent AND dateEvent = NEW.dateEvent;
 

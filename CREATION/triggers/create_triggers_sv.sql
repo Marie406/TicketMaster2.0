@@ -1,4 +1,5 @@
 DROP TRIGGER IF EXISTS trigger_verifier_et_attribuer_session ON SessionVente;
+DROP TRIGGER IF EXISTS trigger_nettoyer_billets_apres_annulation ON SessionVente;
 
 -- Automatise l'attibution de l'id se session aux billets à vendre dans cette session
 CREATE OR REPLACE FUNCTION verifier_et_attribuer_session_vente()

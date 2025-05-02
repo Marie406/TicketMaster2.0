@@ -61,11 +61,12 @@ CHECK (capaciteAccueil>0)
 CREATE TABLE CategorieSiege(
 idCategorie INT,
 nomCategorie VARCHAR(100) NOT NULL
-CHECK (nomCategorie IN 'CAT_1', 'CAT_2', 'CAT_3', 'CAT_4', 'CAT_5', 'FOSSE'),
+CHECK (nomCategorie IN ('CAT_1', 'CAT_2', 'CAT_3', 'CAT_4', 'CAT_5')),
 capaciteCategorie INTEGER NOT NULL
 CHECK (capaciteCategorie >0),
 idLieu INT REFERENCES Lieu(idLieu) ON DELETE CASCADE,
-PRIMARY KEY (idCategore, idLieu)
+PRIMARY KEY (idCategorie, idLieu), 
+UNIQUE(idCategorie)
 );
 
 -- CREATE TABLE Siege (
@@ -75,7 +76,7 @@ PRIMARY KEY (idCategore, idLieu)
 -- );
 
 CREATE TABLE Siege (
-    idSiege INT,
+    idSiege INT UNIQUE,
     numSiege INTEGER NOT NULL,
     idCategorie INT REFERENCES CategorieSiege(idCategorie) ON DELETE CASCADE,
     PRIMARY KEY (idSiege, idCategorie)

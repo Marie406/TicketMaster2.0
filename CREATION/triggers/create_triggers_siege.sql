@@ -11,6 +11,6 @@ END;
 $$ LANGUAGE plpgsql;
 
 CREATE TRIGGER trigger_verrou_modifications_siege
-BEFORE UPDATE ON Concert
+BEFORE UPDATE ON Siege
 FOR EACH ROW
 EXECUTE FUNCTION verrouiller_modifications_siege();

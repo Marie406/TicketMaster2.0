@@ -1,10 +1,10 @@
-DROP TRIGGER IF EXISTS trigger_verrou_utilisateur ON Utilisateur
+DROP TRIGGER IF EXISTS trigger_verrou_utilisateur ON Utilisateur;
 -- -> créer une fonction maj_pts_fidelite (en fonction des achats faits)
 
 CREATE OR REPLACE FUNCTION verrouiller_modifications_utilisateur()
 RETURNS TRIGGER AS $$
 BEGIN
-    -- Interdire la modification de l'email
+    -- Interdire la modification de lemail
     IF NEW.email IS DISTINCT FROM OLD.email THEN
         RAISE EXCEPTION 'Modification de l\'email interdite.';
     END IF;
