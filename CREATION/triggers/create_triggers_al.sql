@@ -30,6 +30,7 @@ EXECUTE FUNCTION verifier_horaire_al();
 CREATE OR REPLACE FUNCTION setGrillePrix()
 RETURNS TRIGGER AS $$
 BEGIN
+    -- avec cette fonction toutes les mêmes catégories de tous les lieux ont les mêmes prix
     INSERT INTO Grille (idEvent, idCategorie, prix)
     SELECT
         NEW.idEvent,

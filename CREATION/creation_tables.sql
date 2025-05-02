@@ -49,19 +49,36 @@ capaciteAccueil INTEGER NOT NULL
 CHECK (capaciteAccueil>0)
 );
 
+-- CREATE TABLE CategorieSiege(
+-- idCategorie INT PRIMARY KEY,
+-- nomCategorie VARCHAR(100) NOT NULL
+-- CHECK (nomCategorie IN 'CAT_1', 'CAT_2', 'CAT_3', 'CAT_4', 'CAT_5', 'FOSSE'),
+-- capaciteCategorie INTEGER NOT NULL
+-- CHECK (capaciteCategorie >0),
+-- idLieu INT REFERENCES Lieu(idLieu) ON DELETE CASCADE
+-- );
+
 CREATE TABLE CategorieSiege(
-idCategorie INT PRIMARY KEY,
+idCategorie INT,
 nomCategorie VARCHAR(100) NOT NULL
 CHECK (nomCategorie IN 'CAT_1', 'CAT_2', 'CAT_3', 'CAT_4', 'CAT_5', 'FOSSE'),
 capaciteCategorie INTEGER NOT NULL
 CHECK (capaciteCategorie >0),
-idLieu INT REFERENCES Lieu(idLieu) ON DELETE CASCADE
+idLieu INT REFERENCES Lieu(idLieu) ON DELETE CASCADE,
+PRIMARY KEY (idCategore, idLieu)
 );
 
+-- CREATE TABLE Siege (
+--     idSiege INT PRIMARY KEY,
+--     numSiege INTEGER NOT NULL,
+--     idCategorie INT REFERENCES CategorieSiege(idCategorie) ON DELETE CASCADE
+-- );
+
 CREATE TABLE Siege (
-    idSiege INT PRIMARY KEY,
+    idSiege INT,
     numSiege INTEGER NOT NULL,
-    idCategorie INT REFERENCES CategorieSiege(idCategorie) ON DELETE CASCADE
+    idCategorie INT REFERENCES CategorieSiege(idCategorie) ON DELETE CASCADE,
+    PRIMARY KEY (idSiege, idCategorie)
 );
 
 CREATE TABLE AvoirLieu (
@@ -102,6 +119,7 @@ CREATE TABLE SessionVente (
     nbMaxBilletsAchetesVIP INTEGER NOT NULL CHECK (nbMaxBilletsAchetesVIP >= 0),
     nbMaxBilletsAchetesRegular INTEGER NOT NULL CHECK (nbMaxBilletsAchetesRegular >= 0),
     idEvent INT REFERENCES Concert(idEvent) ON DELETE CASCADE,
+    --idLieu INT REFERENCES Lieu(idLieu) ON DELETE CASCADE,
     CHECK (dateDebutSession < dateFinSession)
 );
 

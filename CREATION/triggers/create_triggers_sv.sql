@@ -11,7 +11,7 @@ BEGIN
     FROM Billet
     WHERE statutBillet = 'en vente'
       AND idEvent = NEW.idEvent
-      AND dateEvent = NEW.dateEvent
+      AND idLieu = NEW.idLieu
       AND idSession = NULL; -- que les billets qui ne sont pas encore attribués
 
     -- Vérifier qu'on a assez de billets pour la session et maj de l'idSession des billets choisis
