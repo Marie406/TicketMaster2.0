@@ -6,10 +6,10 @@
 -- - la file n’existe pas déjà
 INSERT INTO FileAttente (capaciteQueue, idSessionVente)
 SELECT 
-    -- Appliquer un plafond ds la file attente à 2000
+    -- Appliquer un plafond ds la file attente à 1000
     -- au cas où capacitee_estimee est bcp trop grand 
     --et risquerait de faire crasher le serveur irl
-    LEAST(CEIL(nbBilletsMisEnVente::DECIMAL / NULLIF(nbMaxBilletsAchetesVIP, 1)), 2000),
+    LEAST(nbBilletsMisEnVente*2, 1000),
     idSession
 FROM SessionVente
 --ne créer la file que si on est dans la période de la session de vente

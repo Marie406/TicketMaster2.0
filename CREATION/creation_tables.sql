@@ -120,7 +120,7 @@ CREATE TABLE SessionVente (
     nbMaxBilletsAchetesVIP INTEGER NOT NULL CHECK (nbMaxBilletsAchetesVIP >= 0),
     nbMaxBilletsAchetesRegular INTEGER NOT NULL CHECK (nbMaxBilletsAchetesRegular >= 0),
     idEvent INT REFERENCES Concert(idEvent) ON DELETE CASCADE,
-    --idLieu INT REFERENCES Lieu(idLieu) ON DELETE CASCADE,
+    idLieu INT REFERENCES Lieu(idLieu) ON DELETE CASCADE,
     CHECK (dateDebutSession < dateFinSession)
 );
 
