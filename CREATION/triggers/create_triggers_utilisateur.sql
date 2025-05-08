@@ -6,7 +6,7 @@ RETURNS TRIGGER AS $$
 BEGIN
     -- Interdire la modification de lemail
     IF NEW.email IS DISTINCT FROM OLD.email THEN
-        RAISE EXCEPTION 'Modification de l\'email interdite.';
+        RAISE EXCEPTION 'Modification du mail interdite.';
     END IF;
 
     -- Interdire la modification du statut utilisateur
@@ -16,7 +16,7 @@ BEGIN
 
     -- Interdire la modification de la date d'dateInscription
     IF NEW.dateInscription IS DISTINCT FROM OLD.dateInscription THEN
-        RAISE EXCEPTION 'Modification de la date d\'incription interdite';
+        RAISE EXCEPTION 'Modification de la date d incription interdite';
     END IF;
 
     -- Vérifier la modification des points de fidélité

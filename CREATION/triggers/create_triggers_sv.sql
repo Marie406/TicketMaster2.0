@@ -45,7 +45,7 @@ $$ LANGUAGE plpgsql;
 
 
 CREATE TRIGGER trigger_verifier_et_attribuer_session
-BEFORE INSERT ON SessionVente
+AFTER INSERT ON SessionVente
 FOR EACH ROW
 EXECUTE FUNCTION verifier_et_attribuer_session_vente();
 
