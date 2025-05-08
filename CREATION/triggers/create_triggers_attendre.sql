@@ -1,8 +1,6 @@
 
 DROP TRIGGER IF EXISTS trg_check_rang ON Attendre;
---DROP TRIGGER IF EXISTS trigger_set_grille ON AvoirLieu;
---DROP TRIGGER IF EXISTS trigger_genererBillets ON Grille;
--- DROP TRIGGER IF EXISTS trigger_creer_file_attente ON SessionVente;
+DROP TRIGGER IF EXISTS trigger_verifie_periode_session ON Attendre;
 
 
 CREATE OR REPLACE FUNCTION check_rang_valid() RETURNS TRIGGER AS $$
@@ -25,3 +23,28 @@ BEFORE INSERT OR UPDATE ON Attendre
 FOR EACH ROW
 EXECUTE FUNCTION check_rang_valid();
 
+
+CREATE OR REPLACE FUNCTION verifie_periode_session()
+RETURNS TRIGGER AS $$
+DECLARE
+    debut TIMESTAMP;
+    fin TIMESTAMP;
+BEGIN
+    SELECT sv.dateDebutSession, sv.dateFinSession
+    INTO debut, fin
+    FROM FileAttente fa
+    JOIN SessionVente sv ON fa.idSessionVente = sv.idSession
+    WHERE fa.idQueue = NEW.idQueue;
+
+    IF current_timestamp NOT BETWEEN debut AND fin THEN
+        RAISE EXCEPTION 'Vous ne pouvez pas rejoindre la file d''attente en dehors de la période d''ouverture.';
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trigger_verifie_periode_session
+BEFORE INSERT ON Attendre
+FOR EACH ROW
+EXECUTE FUNCTION verifie_periode_session();

@@ -87,7 +87,7 @@ CREATE TABLE AvoirLieu (
     idEvent INT REFERENCES Concert(idEvent) ON DELETE CASCADE,
     idLieu INT REFERENCES Lieu(idLieu) ON DELETE CASCADE,
     heure TIME NOT NULL,
-    PRIMARY KEY (dateEvent, idEvent, idLieu)
+    PRIMARY KEY (dateEvent, idEvent, idLieu) --idLieu devrait pas etre ds la clé primaire, si on a une date et un event forcément il se passe que ds un seul lieu
 );
 
 CREATE TABLE Grille (

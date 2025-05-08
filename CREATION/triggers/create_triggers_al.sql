@@ -1,6 +1,7 @@
 DROP TRIGGER IF EXISTS trigger_verifier_horaire_al ON AvoirLieu;
 DROP TRIGGER IF EXISTS trigger_set_grille ON AvoirLieu;
 DROP TRIGGER IF EXISTS trigger_supprimer_dans_grille ON AvoirLieu;
+DROP TRIGGER IF EXISTS trigger_creer_session_vente ON AvoirLieu;
 
 -- Eviter les doublons d'horaires sur le même lieu
 CREATE OR REPLACE FUNCTION verifier_horaire_al()
@@ -71,3 +72,62 @@ CREATE TRIGGER trigger_supprimer_dans_grille
 AFTER DELETE ON AvoirLieu
 FOR EACH ROW
 EXECUTE FUNCTION supprimer_dans_grille();
+
+
+/*CREATE OR REPLACE FUNCTION creer_session_vente_par_defaut()
+RETURNS TRIGGER AS $$
+DECLARE
+    id_event INT := NEW.idEvent;
+    id_lieu INT := NEW.idLieu;
+    date_event DATE := NEW.dateEvent;
+    capacite INT;
+    deja_existe BOOLEAN;
+BEGIN
+    -- Vérifier si une session existe déjà pour cet événement et ce lieu
+    SELECT EXISTS (
+        SELECT 1 FROM SessionVente
+        WHERE idEvent = id_event AND idLieu = id_lieu
+    ) INTO deja_existe;
+
+    -- Si une session existe déjà, on ne fait rien
+    IF deja_existe THEN
+        RETURN NULL;
+    END IF;
+
+    -- On récupère la capacité du lieu
+    SELECT capaciteAccueil INTO capacite
+    FROM Lieu
+    WHERE idLieu = id_lieu;
+
+    -- Création de la session de vente
+    INSERT INTO SessionVente (
+        dateDebutSession,
+        dateFinSession,
+        nbBilletsMisEnVente,
+        onlyVIP,
+        nbMaxBilletsAchetesVIP,
+        nbMaxBilletsAchetesRegular,
+        idEvent,
+        idLieu
+    )
+    VALUES (
+        date_event - INTERVAL '15 days',
+        date_event - INTERVAL '1 day',
+        capacite,
+        FALSE,
+        2,
+        4,
+        id_event,
+        id_lieu
+    );
+
+    RETURN NULL;
+END;
+$$ LANGUAGE plpgsql;
+
+
+
+CREATE TRIGGER trigger_creer_session_vente
+AFTER INSERT ON AvoirLieu
+FOR EACH ROW
+EXECUTE FUNCTION creer_session_vente_par_defaut();*/

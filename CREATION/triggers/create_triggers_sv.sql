@@ -50,6 +50,7 @@ FOR EACH ROW
 EXECUTE FUNCTION verifier_et_attribuer_session_vente();
 
 -- Automatiser la suppression de idsession de la session annulée
+-- est pas forcément utile car on a un on delete set null ds la table Billet
 CREATE OR REPLACE FUNCTION nettoyer_billets_session_annulee()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -65,3 +66,4 @@ CREATE TRIGGER trigger_nettoyer_billets_apres_annulation
 AFTER DELETE ON SessionVente
 FOR EACH ROW
 EXECUTE FUNCTION nettoyer_billets_session_annulee();
+
