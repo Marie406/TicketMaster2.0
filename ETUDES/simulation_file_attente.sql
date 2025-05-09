@@ -26,6 +26,28 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+CREATE OR REPLACE FUNCTION get_active_queue_for_event(id_event_var INT)
+RETURNS INT AS $$
+DECLARE
+    idFile INT;
+BEGIN
+    -- On cherche la file d'attente liée à une session active pour l'événement
+    SELECT f.idQueue
+    INTO idFile
+    FROM FileAttente f
+    JOIN SessionVente s ON f.idSessionVente = s.idSession
+    WHERE s.idEvent = id_event_var
+      AND now() BETWEEN s.dateDebutSession AND s.dateFinSession
+    LIMIT 1;
+
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'Aucune file active trouvée pour l''événement %.', id_event_var;
+    END IF;
+
+    RETURN idFile;
+END;
+$$ LANGUAGE plpgsql;
+
 
 -- 2. Traitement de l'entrée dans la file si idUser est fourni
 CREATE OR REPLACE FUNCTION tryEnterQueue(idUtilisateur INT, id_event_var INT)
@@ -37,18 +59,20 @@ DECLARE
     debut TIMESTAMP;
     fin TIMESTAMP;
 BEGIN
-    -- Chercher la session active correspondant à cet idEvent, sous-entend qu'il y en a au plus une
-    SELECT f.idQueue, f.capaciteQueue, s.dateDebutSession, s.dateFinSession
-    INTO idFile, capacite, debut, fin
-    FROM FileAttente f
-    JOIN SessionVente s ON f.idSessionVente = s.idSession
-    WHERE s.idEvent = id_event_var
-      AND now() BETWEEN s.dateDebutSession AND s.dateFinSession;
-
-    IF NOT FOUND THEN
+    -- Utilisation de la fonction pour obtenir la file active
+    BEGIN
+        idFile := get_active_queue_for_event(id_event_var);
+    EXCEPTION WHEN OTHERS THEN
         RAISE NOTICE 'Aucune session active trouvée pour l''événement "%".', id_event_var;
         RETURN;
-    END IF;
+    END;
+
+    -- Récupération de la capacité et de la période de la session
+    SELECT f.capaciteQueue, s.dateDebutSession, s.dateFinSession
+    INTO capacite, debut, fin
+    FROM FileAttente f
+    JOIN SessionVente s ON f.idSessionVente = s.idSession
+    WHERE f.idQueue = idFile;
 
     -- Vérifier si l'utilisateur est déjà dans la file
     IF EXISTS (
@@ -59,7 +83,7 @@ BEGIN
         RETURN;
     END IF;
 
-    -- Vérifier si période valide
+    -- Vérifier si période valide (précaution redondante)
     IF now() < debut OR now() > fin THEN
         RAISE NOTICE 'Période invalide (% - %)', debut, fin;
         RETURN;
@@ -82,6 +106,7 @@ BEGIN
     RAISE NOTICE 'Utilisateur "%" ajouté à la file active de l''événement "%".', idUtilisateur, id_event_var;
 END;
 $$ LANGUAGE plpgsql;
+
 
 
 -- 3. Fonction principale

@@ -150,6 +150,7 @@ BEGIN
 
         IF NOT FOUND THEN
             RAISE NOTICE 'Catégorie % introuvable pour l''événement.', cat;
+            RAISE NOTICE 'La pré-réservation ne peut aboutir';
             RETURN NULL;
         END IF;
 
@@ -166,6 +167,7 @@ BEGIN
 
         IF array_length(billets_temp, 1) < nbDemandes THEN
             RAISE NOTICE 'Pas assez de billets disponibles pour la catégorie %.', cat;
+            RAISE NOTICE 'La pré-réservation ne peut aboutir';
             RETURN NULL;
         END IF;
 
@@ -175,6 +177,7 @@ BEGIN
     -- Vérification finale du nombre total
     IF total_demandes > max_billets THEN
         RAISE NOTICE 'Vous avez demandé % billets, mais vous ne pouvez en acheter que %.', total_demandes, max_billets;
+        RAISE NOTICE 'La pré-réservation ne peut aboutir';
         RETURN NULL;
     END IF;
 
@@ -193,12 +196,62 @@ BEGIN
         statutBillet = 'dans un panier'
     WHERE idBillet = ANY(billets_dispos);
 
+    RAISE NOTICE 'Pré-réservation effectuée pour utilisateur % de % billets', idUserInput, total_demandes;
     RETURN idPanierCree;
 END;
 $$ LANGUAGE plpgsql;
 
---test avec un nb de billets raisonnable
+--vérifie que l'utilisateur est bien dans le sas de la session et
+-- avec un statutSas 'en cours'
+CREATE OR REPLACE FUNCTION preReserver(
+    emailUser VARCHAR,
+    descriptionEvent TEXT,
+    demandes JSONB
+) RETURNS VOID AS $$
+DECLARE
+    idUserFound INT;
+    idEventFound INT;
+    idQueueFound INT;
+BEGIN
+    -- Récupérer l'identifiant de l'utilisateur
+    idUserFound := getUserIdByEmail(emailUser);
 
---on doit emballer cette fonction dans une fonction qui vérifie que l'utilisateur est bien dans le sas de la session et avec un statutSas 'en cours'
---aussi c'est mieux d'utiliser les fcts qui sont ds simu_entreeSAS_majAttendre.sql pour pouvoir appeler avec l'adresse mail et le nom de l'evenement directement
-SELECT creerPreReservation(13,1,'{"CAT_3": 2, "CAT_4": 2}'::jsonb);
+    -- Récupérer l'identifiant de l'événement
+    idEventFound := getEventIdByDescription(descriptionEvent);
+
+    -- Obtenir l'identifiant de la file d'attente active
+    idQueueFound := get_active_queue_for_event(idEventFound);
+
+    -- Vérifier que l'utilisateur est bien dans le SAS associé à cette file
+    IF NOT EXISTS (
+        SELECT 1 FROM SAS s
+        WHERE s.idQueue = idQueueFound AND s.idUser = idUserFound
+            AND statusSAS = 'en cours'
+    ) THEN
+        RAISE NOTICE 'Utilisateur % non présent dans le SAS de la file % pour l''événement %', idUserFound, idQueueFound, descriptionEvent;
+        RAISE NOTICE 'La pré-réservation ne peut aboutir';
+        RETURN;
+    END IF;
+
+    -- Appel de la fonction de pré-réservation
+    PERFORM creerPreReservation(idUserFound, idQueueFound, demandes);
+
+END;
+$$ LANGUAGE plpgsql;
+
+
+
+--test avec un nb de billets raisonnable et pour un utilisateur qui est dans le sas
+SELECT preReserver('daniel@email.com','Tournee mondiale de Stray Kids','{"CAT_3": 2, "CAT_4": 2}'::jsonb);
+
+--test nb de billets trop élevé pr statut
+--SELECT preReserver('daniel@email.com','Tournee mondiale de Stray Kids','{"CAT_3": 3, "CAT_4": 4}'::jsonb);
+
+--test utilisateur dans la file mais pas encore dans le sas
+--SELECT preReserver('hyunjin@email.com','Tournee mondiale de Stray Kids','{"CAT_1": 2, "CAT_2": 1, "CAT_3":1}'::jsonb);
+
+--tester qd nb billets coherent avec limite fixé par la sessionVente mais les stocks sont insuffisants
+
+--montrer les resultats des tests avec 
+--select * from prereservation;
+--select * from billet where idpanier is not null;

@@ -10,3 +10,4 @@
 \i CREATION/triggers/create_triggers_siege.sql
 \i CREATION/triggers/create_triggers_sv.sql
 \i CREATION/triggers/create_triggers_file.sql
+\i CREATION/triggers/create_trigger_transaction.sql

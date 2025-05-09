@@ -118,7 +118,7 @@ EXECUTE FUNCTION verrouiller_modifications_billet();
 
 
 
-
+--obsolete -> on ne modifie pas le prix du billet, on calcule une reduction qu'on applique sur le montant de la transaction -> voir trigger transaction
 -- Autoriser la modification du prix si on applique une réduction (quand achat par un 'VIP')
 CREATE OR REPLACE FUNCTION appliquer_reduction_billet()
 RETURNS TRIGGER AS $$
