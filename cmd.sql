@@ -7,3 +7,8 @@
 \i ETUDES/orga_concerts.sql
 \i ETUDES/simulation_file_attente.sql
 \i ETUDES/simu_entreeSAS_majAttendre.sql
+\i ETUDES/simulation_pre-reservations.sql
+
+--ces deux lignes à executer pour mettre à jour la situation dans Attendre et dans le SAS
+SELECT verifierExpulsionsSAS();
+SELECT basculerVersSAS();

@@ -69,42 +69,46 @@ EXECUTE FUNCTION verifier_statut_billet();
 CREATE OR REPLACE FUNCTION verrouiller_modifications_billet()
 RETURNS TRIGGER AS $$
 BEGIN
-    -- Vérifier si PRIX est modifié sans autorisation
-    IF NEW.prix IS DISTINCT FROM OLD.prix THEN
-        IF coalesce(current_setting('myapp.allow_price_change', true), 'off') IS DISTINCT FROM 'on' THEN
-            RAISE EXCEPTION 'Modification de prix interdite hors trigger trigger_appliquer_reduction.';
-        END IF;
-    END IF;
-
-    -- Empêcher si billet déjà vendu
+    -- Refuser toute modification si le billet est déjà vendu
     IF OLD.statutBillet = 'vendu' THEN
-        RAISE EXCEPTION 'Impossible de modifier le prix : le billet est déjà vendu.';
+        RAISE EXCEPTION 'Impossible de modifier le billet : il est déjà vendu.';
     END IF;
 
-    -- Vérifier si STATUT est modifié sans autorisation
-    IF NEW.statutBillet IS DISTINCT FROM OLD.statutBillet THEN
-        IF coalesce(current_setting('myapp.allow_statut_change', true), 'off') IS DISTINCT FROM 'on' THEN
-            RAISE EXCEPTION 'Modification de statut interdite hors trigger trigger_vendre_billet.';
-        END IF;
+    -- Prix
+    IF NEW.prix IS DISTINCT FROM OLD.prix AND
+       coalesce(current_setting('myapp.allow_price_change', true), 'off') IS DISTINCT FROM 'on' THEN
+        RAISE EXCEPTION 'Modification du prix interdite hors trigger autorisé.';
     END IF;
 
-    IF NEW.idSession IS DISTINCT FROM OLD.idSession THEN
-        IF coalesce(current_setting('myapp.allow_idsession_change', true), 'off') IS DISTINCT FROM 'on' THEN
-            RAISE EXCEPTION 'Modification de idSession interdite hors ';
-        END IF;
+    -- Statut
+    IF NEW.statutBillet IS DISTINCT FROM OLD.statutBillet AND
+       coalesce(current_setting('myapp.allow_statut_change', true), 'off') IS DISTINCT FROM 'on' THEN
+        RAISE EXCEPTION 'Modification du statut interdite hors trigger autorisé.';
     END IF;
 
-    -- Empêcher toute autre modification de champ
+    -- idSession
+    IF NEW.idSession IS DISTINCT FROM OLD.idSession AND
+       coalesce(current_setting('myapp.allow_idsession_change', true), 'off') IS DISTINCT FROM 'on' THEN
+        RAISE EXCEPTION 'Modification de idSession interdite hors trigger autorisé.';
+    END IF;
+
+    -- idPanier
+    IF NEW.idPanier IS DISTINCT FROM OLD.idPanier AND
+       coalesce(current_setting('myapp.allow_idpanier_change', true), 'off') IS DISTINCT FROM 'on' THEN
+        RAISE EXCEPTION 'Modification de idPanier interdite hors trigger autorisé.';
+    END IF;
+
+    -- Autres champs non modifiables
     IF NEW.idSiege IS DISTINCT FROM OLD.idSiege
        OR NEW.dateEvent IS DISTINCT FROM OLD.dateEvent
-       OR NEW.idEvent IS DISTINCT FROM OLD.idEvent
-       OR NEW.idPanier IS DISTINCT FROM OLD.idPanier THEN
-        RAISE EXCEPTION 'Modification des autres champs du billet interdite.';
+       OR NEW.idEvent IS DISTINCT FROM OLD.idEvent THEN
+        RAISE EXCEPTION 'Modification de champs non autorisés (idSiege, dateEvent ou idEvent).';
     END IF;
 
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
+
 
 
 CREATE TRIGGER trigger_verrou_modifications_billet
