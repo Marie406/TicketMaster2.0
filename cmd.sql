@@ -8,6 +8,9 @@
 \i ETUDES/simulation_file_attente.sql
 \i ETUDES/simu_entreeSAS_majAttendre.sql
 \i ETUDES/simulation_pre-reservations.sql
+\i ETUDES/validation_transaction.sql
+\i ETUDES/consultation_billets_achetes.sql
+
 
 --ces deux lignes à executer pour mettre à jour la situation dans Attendre et dans le SAS
 SELECT verifierExpulsionsSAS();
