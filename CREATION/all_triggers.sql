@@ -1,5 +1,5 @@
 \i CREATION/triggers/create_triggers_artiste.sql
-\i CREATION/triggers/creation_triggers_lieu.sql
+\i CREATION/triggers/create_triggers_lieu.sql
 \i CREATION/triggers/create_triggers_concert.sql
 \i CREATION/triggers/create_triggers_utilisateur.sql
 \i CREATION/triggers/create_triggers_al.sql
@@ -9,3 +9,4 @@
 \i CREATION/triggers/create_triggers_grille.sql
 \i CREATION/triggers/create_triggers_siege.sql
 \i CREATION/triggers/create_triggers_sv.sql
+\i CREATION/triggers/create_triggers_file.sql

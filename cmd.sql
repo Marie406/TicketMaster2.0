@@ -6,3 +6,4 @@
 \i ETUDES/creation_evenements.sql
 \i ETUDES/orga_concerts.sql
 \i ETUDES/simulation_file_attente.sql
+\i ETUDES/simu_entreeSAS_majAttendre.sql

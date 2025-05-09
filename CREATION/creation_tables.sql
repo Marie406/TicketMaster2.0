@@ -2,6 +2,7 @@ DROP TABLE IF EXISTS Billet;
 DROP TABLE IF EXISTS Reservation;
 DROP TABLE IF EXISTS Transac;
 DROP TABLE IF EXISTS PreReservation;
+DROP TABLE IF EXISTS SAS;
 DROP TABLE IF EXISTS Attendre;
 DROP TABLE IF EXISTS FileAttente;
 DROP TABLE IF EXISTS SessionVente;
@@ -139,6 +140,17 @@ CREATE TABLE Attendre (
     UNIQUE (idQueue, rang) -- Un rang ne peut être occupé que par un seul utilisateur
 );
 
+--pour simuler la sortie de file d'attente et la possibilité de choisir ses billets
+CREATE TABLE SAS (
+    idUser INT NOT NULL REFERENCES Utilisateur(idUser) ON DELETE CASCADE,
+    idQueue INT NOT NULL REFERENCES FileAttente(idQueue) ON DELETE CASCADE,
+    entreeSAS TIMESTAMP NOT NULL DEFAULT now(),
+    timeoutSAS INTERVAL NOT NULL DEFAULT INTERVAL '2 minutes',
+    sortieSAS TIMESTAMP DEFAULT NULL,
+    statusSAS VARCHAR(20) DEFAULT 'en cours', 
+    CHECK (statusSAS IN ('en cours', 'termine', 'expulse')),
+    PRIMARY KEY (idQueue, idUser)
+);
 
 CREATE TABLE PreReservation (
     idPanier SERIAL PRIMARY KEY,
