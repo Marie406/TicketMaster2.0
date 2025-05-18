@@ -197,12 +197,12 @@ END;
 $$ LANGUAGE plpgsql;
 
 
-CREATE OR REPLACE FUNCTION creer_transaction_avec_montant_zero()
+CREATE OR REPLACE FUNCTION creer_transaction_avec_montant_zero(idPanierInput)
 RETURNS TRIGGER AS $$
 BEGIN
     -- Créer une transaction avec un montant initial à 0 lorsque la pré-réservation est créée
     INSERT INTO Transac(montant, statutTransaction, idPanier)
-    VALUES (0, 'en attente', NEW.idPanier);
+    VALUES (0, 'en attente', idPanierInput);
 
     RETURN NEW;
 END;
@@ -219,7 +219,7 @@ CREATE OR REPLACE FUNCTION preReserver(
 DECLARE
     idUserFound INT;
     idSessionFound INT;
-    idQueue INT;
+    idQueueFound INT;
 BEGIN
     -- on recupère l'iduser et idsession a partir de l'idpanier
     SELECT
@@ -243,11 +243,13 @@ BEGIN
         RETURN;
     END IF;
 
-    PERFORM prereserver_demande(idPanierUser,idUserFound idSessionFound, demandes);
-    PERFORM creer_transaction_avec_montant_zero();
+    PERFORM prereserver_demande(idPanierUser, idUserFound, idSessionFound, demandes);
+    PERFORM creer_transaction_avec_montant_zero(idPanierUser);
 
 END;
 $$ LANGUAGE plpgsql;
+
+
 
 
 --test avec un nb de billets raisonnable et pour un utilisateur qui est dans le sas
