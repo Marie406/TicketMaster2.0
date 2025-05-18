@@ -169,6 +169,15 @@ CREATE TABLE Transac (
     idPanier INTEGER REFERENCES PreReservation(idPanier) ON DELETE CASCADE
 );
 
+-- Ajout des contraintes d'unicité partielle :
+CREATE UNIQUE INDEX unique_en_attente_par_panier
+ON Transac (idPanier)
+WHERE statutTransaction = 'en attente';
+
+CREATE UNIQUE INDEX unique_valide_par_panier
+ON Transac (idPanier)
+WHERE statutTransaction = 'validé';
+
 
 CREATE TABLE Reservation (
     idReservation SERIAL PRIMARY KEY,
