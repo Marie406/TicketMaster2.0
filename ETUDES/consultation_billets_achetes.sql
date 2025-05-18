@@ -11,10 +11,7 @@ RETURNS TABLE (
 DECLARE
     userId INT;
 BEGIN
-    -- Récupération de l'id de l'utilisateur à partir de son email
     userId := getUserIdByEmail(emailUtilisateur);
-
-    -- Message affiché dans le log (pas en résultat direct)
     RAISE NOTICE 'Voici les billets de l’utilisateur %', userId;
 
     -- Retourner les lignes filtrées de la vue

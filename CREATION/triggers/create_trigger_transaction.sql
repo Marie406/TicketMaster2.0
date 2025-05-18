@@ -100,6 +100,30 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+CREATE OR REPLACE FUNCTION maj_statut_sas_apres_validation_transac()
+RETURNS TRIGGER AS $$
+DECLARE
+    user_id INTEGER;
+BEGIN
+    -- Récupérer l'utilisateur depuis la transaction via le panier
+    SELECT idUser INTO user_id
+    FROM PreReservation
+    WHERE idPanier = NEW.idPanier;
+
+    -- Mettre à jour le statut SAS si l'utilisateur a été trouvé
+    IF user_id IS NOT NULL THEN
+        UPDATE SAS
+        SET statusSAS = 'termine',
+            sortieSAS = NOW()
+        WHERE idUser = user_id
+          AND statusSAS = 'en cours'; -- Ne pas modifier ceux déjà terminés ou expulsés
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+
 /*CREATE OR REPLACE FUNCTION supprimer_prereservation_si_transaction_validee()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -124,6 +148,16 @@ AFTER UPDATE OF statutTransaction ON Transac
 FOR EACH ROW
 WHEN (OLD.statutTransaction IS DISTINCT FROM NEW.statutTransaction AND NEW.statutTransaction = 'validé')
 EXECUTE FUNCTION marquer_billets_vendus();
+
+CREATE TRIGGER trigger_maj_statut_sas
+AFTER UPDATE OF statutTransaction ON Transac
+FOR EACH ROW
+WHEN (
+    OLD.statutTransaction IS DISTINCT FROM NEW.statutTransaction
+    AND NEW.statutTransaction = 'validé'
+)
+EXECUTE FUNCTION maj_statut_sas_apres_validation_transac();
+
 
 /*CREATE TRIGGER trigger_supprimer_prereservation
 AFTER UPDATE OF statutTransaction ON Transac

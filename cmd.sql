@@ -2,7 +2,6 @@
 \i CREATION/fonctions_communes.sql
 \i CREATION/all_triggers.sql
 \i CREATION/insert_data.sql
---\i CREATION/gestion_files.sql
 \i ETUDES/creation_utilisateurs.sql
 \i ETUDES/creation_evenements.sql
 \i ETUDES/orga_concerts.sql
