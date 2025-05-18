@@ -24,7 +24,6 @@ EXECUTE FUNCTION verrouiller_modification_transaction();
 CREATE OR REPLACE FUNCTION verrouiller_creation_transaction()
 RETURNS TRIGGER AS $$
 BEGIN
-
     IF coalesce(current_setting('myapp.allow_create_transac', true), 'off') IS DISTINCT FROM 'on' THEN
         RAISE EXCEPTION 'Création de transaction interdite hors trigger/fonction autorisé.';
     END IF;
@@ -114,10 +113,10 @@ BEGIN
         END IF;
 
         -- Insérer une réservation liée à la transaction
-        PERFORM set_config('myapp.allow_create_transac', 'on', true);
+        PERFORM set_config('myapp.allow_create_reserv', 'on', true);
         INSERT INTO Reservation(dateReservation, idUser, idTransaction)
         VALUES (NOW(), user_id, NEW.idTransaction);
-        PERFORM set_config('myapp.allow_create_transac', 'off', true);
+        PERFORM set_config('myapp.allow_create_reserv', 'off', true);
 
     END IF;
 
@@ -125,20 +124,17 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-
 CREATE OR REPLACE FUNCTION marquer_billets_vendus()
 RETURNS TRIGGER AS $$
 BEGIN
     IF OLD.statutTransaction = 'en attente' AND NEW.statutTransaction = 'validé' THEN
-        PERFORM set_config('myapp.allow_status_change', 'on', true);
+        PERFORM set_config('myapp.allow_statut_change', 'on', true);
         UPDATE Billet
         SET statutBillet = 'vendu'
         WHERE idPanier = NEW.idPanier;
-        PERFORM set_config('myapp.allow_status_change', 'off', true);
-
+        PERFORM set_config('myapp.allow_statut_change', 'off', true);
         RAISE NOTICE 'Billets associés au panier % marqués comme vendus.', NEW.idPanier;
     END IF;
-
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;

@@ -21,7 +21,7 @@ FOR EACH ROW
 EXECUTE FUNCTION verrouiller_modification_sv();
 
 
-CREATE OR REPLACE FUNCTION verrouiller_creation_sv()
+/*CREATE OR REPLACE FUNCTION verrouiller_creation_sv()
 RETURNS TRIGGER AS $$
 BEGIN
     IF coalesce(current_setting('myapp.allow_create_sv', true), 'off') IS DISTINCT FROM 'on' THEN
@@ -34,7 +34,7 @@ $$ LANGUAGE plpgsql;
 CREATE TRIGGER trigger_verrou_creation_sv
 BEFORE INSERT ON SessionVente
 FOR EACH ROW
-EXECUTE FUNCTION verrouiller_creation_sv();
+EXECUTE FUNCTION verrouiller_creation_sv();*/
 
 
 
@@ -57,6 +57,7 @@ BEGIN
       AND c.idLieu = NEW.idLieu;
 
     -- Vérifier qu'on a assez de billets pour la session et maj de l'idSession des billets choisis
+    PERFORM set_config('myapp.allow_idsession_change', 'on', true);
     IF nb_billets_disponibles >= NEW.nbBilletsMisEnVente THEN
         WITH billets_a_mettre_a_jour AS (
             SELECT b.idBillet
@@ -69,14 +70,14 @@ BEGIN
               AND c.idLieu = NEW.idLieu
             LIMIT NEW.nbBilletsMisEnVente
         )
-        SELECT set_config('myapp.allow_idsession_change', 'on', true);
         UPDATE Billet
         SET idSession = NEW.idSession
         WHERE idBillet IN (SELECT idBillet FROM billets_a_mettre_a_jour);
-        SELECT set_config('myapp.allow_idsession_change', 'off', true);
+    PERFORM set_config('myapp.allow_idsession_change', 'off', true);
     ELSE
         RAISE EXCEPTION 'Pas assez de billets disponibles pour l''événement % au lieu %', NEW.idEvent, NEW.idLieu;
     END IF;
+    
 
     RETURN NULL;
 END;
@@ -90,7 +91,7 @@ EXECUTE FUNCTION verifier_et_attribuer_session_vente();
 
 -- Automatiser la suppression de idsession de la session annulée
 -- est pas forcément utile car on a un on delete set null ds la table Billet
-CREATE OR REPLACE FUNCTION nettoyer_billets_session_annulee()
+/*CREATE OR REPLACE FUNCTION nettoyer_billets_session_annulee()
 RETURNS TRIGGER AS $$
 BEGIN
     PERFORM set_config('myapp.allow_idsession_change', 'on', true);
@@ -105,7 +106,7 @@ $$ LANGUAGE plpgsql;
 CREATE TRIGGER trigger_nettoyer_billets_apres_annulation
 AFTER DELETE ON SessionVente
 FOR EACH ROW
-EXECUTE FUNCTION nettoyer_billets_session_annulee();
+EXECUTE FUNCTION nettoyer_billets_session_annulee();*/
 
 
 CREATE OR REPLACE FUNCTION creer_file_attente()

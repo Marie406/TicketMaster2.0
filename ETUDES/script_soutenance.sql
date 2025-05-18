@@ -86,20 +86,20 @@ SELECT basculerVersSAS();
 
 --6. simulation ajout des billets ds panier
 --test avec un nb de billets raisonnable et pour un utilisateur qui est dans le sas
-SELECT preReserverAvecEmail('daniel@email.com','{"CAT_3": 2, "CAT_4": 2}'::jsonb);
+SELECT preReserverAvecEmail('daniel@email.com','Tournee mondiale de Stray Kids', '{"CAT_3": 2, "CAT_4": 2}'::jsonb);
 
 --test nb de billets trop élevé pr statut
---SELECT preReserver('daniel@email.com','Tournee mondiale de Stray Kids','{"CAT_3": 3, "CAT_4": 4}'::jsonb);
+--SELECT preReserverAvecEmail('daniel@email.com','Tournee mondiale de Stray Kids','{"CAT_3": 3, "CAT_4": 4}'::jsonb);
 
 --test utilisateur dans la file mais pas encore dans le sas
---SELECT preReserver('hyunjin@email.com','Tournee mondiale de Stray Kids','{"CAT_1": 2, "CAT_2": 1, "CAT_3":1}'::jsonb);
+--SELECT preReserverAvecEmail('hyunjin@email.com','Tournee mondiale de Stray Kids','{"CAT_1": 2, "CAT_2": 1, "CAT_3":1}'::jsonb);
 
 --tester qd nb billets coherent avec limite fixé par la sessionVente mais les stocks sont insuffisants
 
 select * from prereservation;
 select * from billet where statutBillet not in ('en vente');
 
---au bout de 2min+ faire ça puis effectuer transaction pour montrer que impossible car trop tard
+--au bout de 1min+ faire ça puis effectuer transaction pour montrer que impossible car trop tard
 --SELECT verifierExpulsionsSAS();
 --SELECT basculerVersSAS();
 

@@ -52,11 +52,17 @@ BEGIN
           FROM FileAttente
           WHERE idQueue = NEW.idQueue;
 
+        --pour les idPanier qui vont etre set à null
+        PERFORM set_config('myapp.allow_modify_transac', 'on', true);
+        PERFORM set_config('myapp.allow_idpanier_change', 'on', true);
+        PERFORM set_config('myapp.allow_statut_change', 'on', true);
         -- Supprimer la pré‑réservation correspondante pour cet utilisateur dans cette session
         DELETE FROM PreReservation
         WHERE idUser = NEW.idUser
         AND idSession = v_session;
-
+        PERFORM set_config('myapp.allow_modify_transac', 'off', true);
+        PERFORM set_config('myapp.allow_idpanier_change', 'off', true);
+        PERFORM set_config('myapp.allow_statut_change', 'off', true);
         RAISE NOTICE 'La pré‑réservation de l utilisateur % pour la session % a été annulée (utilisateur expulsé du SAS).',
                      NEW.idUser, v_session;
     RETURN NEW;

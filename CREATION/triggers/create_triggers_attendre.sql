@@ -93,11 +93,12 @@ CREATE OR REPLACE FUNCTION shift_queue_after_exit()
 RETURNS TRIGGER AS $$
 BEGIN
     -- Décrémenter le rang de tous les utilisateurs situés derrière celui qui vient de quitter
+    PERFORM set_config('myapp.allow_modify_attendre', 'on', true);
     UPDATE Attendre
     SET rang = rang - 1
     WHERE idQueue = OLD.idQueue
       AND rang > OLD.rang;
-
+    PERFORM set_config('myapp.allow_modify_attendre', 'off', true);
     RETURN OLD;
 END;
 $$ LANGUAGE plpgsql;

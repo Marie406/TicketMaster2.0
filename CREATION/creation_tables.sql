@@ -146,7 +146,7 @@ CREATE TABLE SAS (
     idUser INT NOT NULL REFERENCES Utilisateur(idUser) ON DELETE CASCADE,
     idQueue INT NOT NULL REFERENCES FileAttente(idQueue) ON DELETE CASCADE,
     entreeSAS TIMESTAMP NOT NULL DEFAULT now(),
-    timeoutSAS INTERVAL NOT NULL DEFAULT INTERVAL '2 minutes',
+    timeoutSAS INTERVAL NOT NULL DEFAULT INTERVAL '1 minute',
     sortieSAS TIMESTAMP DEFAULT NULL,
     statusSAS VARCHAR(20) DEFAULT 'en cours', 
     CHECK (statusSAS IN ('en cours', 'termine', 'expulse')),

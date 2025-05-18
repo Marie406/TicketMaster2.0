@@ -1,11 +1,6 @@
 DROP TRIGGER IF EXISTS trigger_avant_insert_billet ON Billet;
-DROP TRIGGER IF EXISTS trigger_avant_insert_statut_billet ON Billet;
 DROP TRIGGER IF EXISTS trigger_verrou_modifications_billet ON Billet;
-DROP TRIGGER IF EXISTS trigger_mis_panier_billet ON Billet;
-DROP TRIGGER IF EXISTS trigger_vendre_billet ON Billet;
 DROP TRIGGER IF EXISTS trigger_autoriser_changement_idsession ON Billet;
--- -> Ajouter un trigger pour verifier les prix des billets lors de l'insert en fonction de categorie...
--- -> Problème à changer, trouver une autre solution que
 
 
 -- Empêcher l’ajout d’un billet si le nombre de billets
@@ -16,6 +11,9 @@ DECLARE
     capacite_du_lieu INT;
     total_billets INT;
 BEGIN
+    IF NEW.statutBillet IS DISTINCT FROM 'en vente' THEN
+        RAISE EXCEPTION 'Le statut initial du billet doit être "en vente".';
+    END IF;
     -- Récupérer la capacité du lieu concerné par l'événement
     SELECT L.capaciteAccueil
     INTO capacite_du_lieu
@@ -45,27 +43,8 @@ BEFORE INSERT ON billet
 FOR EACH ROW
 EXECUTE FUNCTION avant_insert_billet();
 
--- Vérifier que le statut du billet est bien 'en vente' avnt d'insérer
-CREATE OR REPLACE FUNCTION verifier_statut_billet()
-RETURNS TRIGGER AS $$
-BEGIN
-    IF NEW.statutBillet IS DISTINCT FROM 'en vente' THEN
-        RAISE EXCEPTION 'Le statut initial du billet doit être "en vente".';
-    END IF;
-
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE TRIGGER trigger_avant_insert_statut_billet
-BEFORE INSERT ON Billet
-FOR EACH ROW
-EXECUTE FUNCTION verifier_statut_billet();
 
 -- Empêcher toute modification manuelle d'une ligne de la table billet
--- sauf pour le prix si c'est pour appliquer une réduction
--- et pour le status, si le billet est vendu ou mis dans un panier
--- et pour le idSession si c'est fait correctement
 CREATE OR REPLACE FUNCTION verrouiller_modifications_billet()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -81,20 +60,20 @@ BEGIN
     END IF;
 
     -- Statut
-    IF NEW.statutBillet IS DISTINCT FROM OLD.statutBillet AND
-       coalesce(current_setting('myapp.allow_statut_change', true), 'off') IS DISTINCT FROM 'on' THEN
-        RAISE EXCEPTION 'Modification du statut interdite hors trigger autorisé.';
+    IF NEW.statutBillet IS DISTINCT FROM OLD.statutBillet AND 
+        coalesce(current_setting('myapp.allow_statut_change', true), 'off') IS DISTINCT FROM 'on' THEN
+            RAISE EXCEPTION 'Modification interdite';
     END IF;
 
     -- idSession
     IF NEW.idSession IS DISTINCT FROM OLD.idSession AND
-       coalesce(current_setting('myapp.allow_idsession_change', true), 'off') IS DISTINCT FROM 'on' THEN
-        RAISE EXCEPTION 'Modification de idSession interdite hors trigger autorisé.';
+        coalesce(current_setting('myapp.allow_idsession_change', true), 'off') IS DISTINCT FROM 'on' THEN
+            RAISE EXCEPTION 'Modification interdite';
     END IF;
 
     -- idPanier
     IF NEW.idPanier IS DISTINCT FROM OLD.idPanier AND
-       coalesce(current_setting('myapp.allow_idpanier_change', true), 'off') IS DISTINCT FROM 'on' THEN
+       (coalesce(current_setting('myapp.allow_idpanier_change', true), 'off')) IS DISTINCT FROM 'on' THEN
         RAISE EXCEPTION 'Modification de idPanier interdite hors trigger autorisé.';
     END IF;
 
@@ -110,46 +89,11 @@ END;
 $$ LANGUAGE plpgsql;
 
 
-
 CREATE TRIGGER trigger_verrou_modifications_billet
 BEFORE UPDATE ON Billet
 FOR EACH ROW
 EXECUTE FUNCTION verrouiller_modifications_billet();
 
-
--- Autoriser la modification du prix si le billet à été mis dans un panier
-CREATE OR REPLACE FUNCTION mis_panier_billet()
-RETURNS TRIGGER AS $$
-BEGIN
-    PERFORM set_config('myapp.allow_statut_change', 'on', true);
-    NEW.statutBillet := 'dans un panier';
-    PERFORM set_config('myapp.allow_statut_change', 'off', true);
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE TRIGGER trigger_mis_panier_billet
-BEFORE UPDATE ON Billet
-FOR EACH ROW
-WHEN (OLD.statutBillet = 'en vente' AND NEW.statutBillet = 'dans un panier')
-EXECUTE FUNCTION mis_panier_billet();
-
--- Autoriser la modification du statut si le billet à été vendu depuis un panier
-CREATE OR REPLACE FUNCTION vendu_billet()
-RETURNS TRIGGER AS $$
-BEGIN
-    PERFORM set_config('myapp.allow_statut_change', 'on', true);
-    NEW.statutBillet := 'vendu';
-    PERFORM set_config('myapp.allow_statut_change', 'off', true);
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE TRIGGER trigger_vendre_billet
-BEFORE UPDATE ON Billet
-FOR EACH ROW
-WHEN (OLD.statutBillet = 'dans un panier' AND NEW.statutBillet = 'vendu')
-EXECUTE FUNCTION vendu_billet();
 
 -- si il passe de qqchose à null ou de null à une idSession existante
 -- normalement il faudrait aussi empecher de mettre une idSession déjà passée dessus...
@@ -176,7 +120,7 @@ BEGIN
 
     -- Tout autre cas : changement refusé
     ELSE
-        RAISE EXCEPTION 'Changement de idSession non autorisé (valeurs : % → %)', OLD.idSession, NEW.idSession;
+        RAISE EXCEPTION 'Changement de idSession non autorisé (valeurs : % -> %)', OLD.idSession, NEW.idSession;
     END IF;
 
     RETURN NEW;
