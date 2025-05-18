@@ -34,6 +34,7 @@ BEGIN
                 AND b.dateEvent = date_
             )
             LIMIT nb_billets
+            
         LOOP
             -- Insertion des billets avec la bonne date
             INSERT INTO Billet (

@@ -54,8 +54,8 @@ BEGIN
 
         -- Supprimer la pré‑réservation correspondante pour cet utilisateur dans cette session
         DELETE FROM PreReservation
-         WHERE idUser = NEW.idUser
-           AND idSession = v_session;
+        WHERE idUser = NEW.idUser
+        AND idSession = v_session;
 
         RAISE NOTICE 'La pré‑réservation de l utilisateur % pour la session % a été annulée (utilisateur expulsé du SAS).',
                      NEW.idUser, v_session;
@@ -84,8 +84,10 @@ BEGIN
     WHERE idQueue = NEW.idQueue;
 
     -- Insérer le nouveau panier
+    PERFORM set_config('myapp.allow_create_prereserv', 'on', true);
     INSERT INTO PreReservation (idUser, idSession)
     VALUES (NEW.idUser, v_idSession);
+    PERFORM set_config('myapp.allow_create_prereserv', 'off', true);
 
     -- Notifier l'utilisateur
     PERFORM informerUtilisateurOptionsAchat(NEW.idUser, v_idSession);

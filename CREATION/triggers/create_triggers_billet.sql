@@ -66,7 +66,7 @@ EXECUTE FUNCTION verifier_statut_billet();
 -- sauf pour le prix si c'est pour appliquer une réduction
 -- et pour le status, si le billet est vendu ou mis dans un panier
 -- et pour le idSession si c'est fait correctement
-/*CREATE OR REPLACE FUNCTION verrouiller_modifications_billet()
+CREATE OR REPLACE FUNCTION verrouiller_modifications_billet()
 RETURNS TRIGGER AS $$
 BEGIN
     -- Refuser toute modification si le billet est déjà vendu
@@ -93,10 +93,10 @@ BEGIN
     END IF;
 
     -- idPanier
-    /*IF NEW.idPanier IS DISTINCT FROM OLD.idPanier AND
+    IF NEW.idPanier IS DISTINCT FROM OLD.idPanier AND
        coalesce(current_setting('myapp.allow_idpanier_change', true), 'off') IS DISTINCT FROM 'on' THEN
         RAISE EXCEPTION 'Modification de idPanier interdite hors trigger autorisé.';
-    END IF;*/
+    END IF;
 
     -- Autres champs non modifiables
     IF NEW.idSiege IS DISTINCT FROM OLD.idSiege
@@ -114,7 +114,7 @@ $$ LANGUAGE plpgsql;
 CREATE TRIGGER trigger_verrou_modifications_billet
 BEFORE UPDATE ON Billet
 FOR EACH ROW
-EXECUTE FUNCTION verrouiller_modifications_billet();*/
+EXECUTE FUNCTION verrouiller_modifications_billet();
 
 
 -- Autoriser la modification du prix si le billet à été mis dans un panier
@@ -123,6 +123,7 @@ RETURNS TRIGGER AS $$
 BEGIN
     PERFORM set_config('myapp.allow_statut_change', 'on', true);
     NEW.statutBillet := 'dans un panier';
+    PERFORM set_config('myapp.allow_statut_change', 'off', true);
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -139,6 +140,7 @@ RETURNS TRIGGER AS $$
 BEGIN
     PERFORM set_config('myapp.allow_statut_change', 'on', true);
     NEW.statutBillet := 'vendu';
+    PERFORM set_config('myapp.allow_statut_change', 'off', true);
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;

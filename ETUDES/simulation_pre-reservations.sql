@@ -141,6 +141,9 @@ BEGIN
         statutBillet = 'dans un panier'
     WHERE idBillet = ANY(billets_dispos);
 
+    PERFORM set_config('myapp.allow_statut_change', 'off', true);
+    PERFORM set_config('myapp.allow_idpanier_change', 'off', true);
+
     RAISE NOTICE 'Pré-réservation effectuée pour utilisateur % de % billets', idUserInput, total_demandes;
     RETURN;
 END;
