@@ -2,6 +2,43 @@
 DROP TRIGGER IF EXISTS trg_check_rang ON Attendre;
 DROP TRIGGER IF EXISTS trigger_verifie_periode_session ON Attendre;
 
+DROP TRIGGER IF EXISTS trigger_verrou_modification_attendre ON Attendre;
+DROP TRIGGER IF EXISTS trigger_verrou_creation_attendre ON Attendre;
+
+CREATE OR REPLACE FUNCTION verrouiller_modification_attendre()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF coalesce(current_setting('myapp.allow_modify_attendre', true), 'off') IS DISTINCT FROM 'on' THEN
+        RAISE EXCEPTION 'Modification de attendre interdite hors trigger/fonction autorisé.';
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trigger_verrou_modification_attendre
+BEFORE UPDATE ON Attendre
+FOR EACH ROW
+EXECUTE FUNCTION verrouiller_modification_attendre();
+
+
+CREATE OR REPLACE FUNCTION verrouiller_creation_attendre()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF coalesce(current_setting('myapp.allow_create_attendre', true), 'off') IS DISTINCT FROM 'on' THEN
+        RAISE EXCEPTION 'Création de attendre interdite hors trigger/fonction autorisé.';
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trigger_verrou_creation_attendre
+BEFORE INSERT ON Attendre
+FOR EACH ROW
+EXECUTE FUNCTION verrouiller_creation_attendre();
+
+
+
+
 
 CREATE OR REPLACE FUNCTION check_rang_valid() RETURNS TRIGGER AS $$
 DECLARE
