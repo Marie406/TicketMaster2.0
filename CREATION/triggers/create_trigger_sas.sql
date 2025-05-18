@@ -8,8 +8,6 @@ RETURNS TRIGGER AS $$
 DECLARE
     v_session INT;
 BEGIN
-    -- Vérifier que le statut passe bien de 'en cours' à 'expulse'
-    --IF OLD.statusSAS = 'en cours' AND NEW.statusSAS = 'expulse' THEN
         -- Récupérer la session de vente associée à la file (FileAttente)
         SELECT idSessionVente
           INTO v_session
@@ -23,7 +21,6 @@ BEGIN
 
         RAISE NOTICE 'La pré‑réservation de l utilisateur % pour la session % a été annulée (utilisateur expulsé du SAS).',
                      NEW.idUser, v_session;
-    END IF;
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -37,29 +34,31 @@ WHEN (OLD.statusSAS = 'en cours' AND NEW.statusSAS = 'expulse')
 EXECUTE FUNCTION annuler_pre_reservation_if_user_lost_SAS();
 
 
--- création du panier
 CREATE OR REPLACE FUNCTION creer_prereservation()
 RETURNS TRIGGER AS $$
 DECLARE
     v_idSession INTEGER;
 BEGIN
-    -- On récupère la session associée à la file d'attente (table FileAttente)
-    SELECT idSession
+    -- Récupérer la session associée à la file d'attente
+    SELECT idSessionVente
     INTO v_idSession
     FROM FileAttente
     WHERE idQueue = NEW.idQueue;
 
-    -- On insère le nouveau panier
+    -- Insérer le nouveau panier
     INSERT INTO PreReservation (idUser, idSession)
     VALUES (NEW.idUser, v_idSession);
-    -- la date de création est automatiquement initialisée avec TIMESTAMP NOT NULL DEFAULT NOW()
-    PERFORMS informerUtilisateurOptionsAchat(NEW.idUSER, v_idSession);
+
+    -- Notifier l'utilisateur
+    PERFORM informerUtilisateurOptionsAchat(NEW.idUser, v_idSession);
+
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
--- Trigger qui réer un nouveau panier pour un utilisateur qui entre dans le SAS
+
 CREATE TRIGGER trigger_creer_panier_prereservation
 AFTER INSERT ON SAS
 FOR EACH ROW
 EXECUTE FUNCTION creer_prereservation();
+

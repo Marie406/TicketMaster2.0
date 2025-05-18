@@ -1,3 +1,5 @@
+DROP TRIGGER IF EXISTS trigger_billets_en_vente ON PreReservation;
+
 CREATE OR REPLACE FUNCTION remettre_billets_en_vente()
 RETURNS TRIGGER AS $$
 BEGIN

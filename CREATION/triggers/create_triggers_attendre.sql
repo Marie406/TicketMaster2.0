@@ -104,7 +104,6 @@ BEGIN
      WHERE idQueue = NEW.idQueue;
 
     NEW.rang := max_rank + 1;
-    END IF;
 
     RETURN NEW;
 END;

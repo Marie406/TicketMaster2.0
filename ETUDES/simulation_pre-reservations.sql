@@ -1,23 +1,3 @@
-DROP VIEW vue_dispo_par_categorie;
-
-CREATE OR REPLACE VIEW vue_dispo_par_categorie AS
-SELECT
-    B.idSession,
-    C.idCategorie,
-    C.nomCategorie,
-    G.prix,
-    COUNT(B.idBillet) FILTER (WHERE B.statutBillet = 'en vente') AS billets_restants
-FROM Billet B
-JOIN Siege S ON B.idSiege = S.idSiege
-JOIN CategorieSiege C ON S.idCategorie = C.idCategorie
-JOIN Grille G ON G.idEvent = B.idEvent AND G.idCategorie = C.idCategorie
-WHERE B.idSession IS NOT NULL
-GROUP BY B.idSession, C.idCategorie, C.nomCategorie, G.prix;
-
-
---PREPARE billets_par_categorie(INT) AS
---SELECT * FROM vue_dispo_par_categorie WHERE idSession = $1;
-
 CREATE OR REPLACE FUNCTION recupererNbBilletsAchetables(idUserInput INT, idSessionInput INT)
 RETURNS INT AS $$
 DECLARE
@@ -56,38 +36,6 @@ BEGIN
     -- Afficher
     RAISE NOTICE 'Bonjour utilisateur %, vous avez un compte % et pouvez acheter jusqu''à % billets pendant cette session.',
         idUserInput, type_utilisateur, max_billets;
-
-    RETURN max_billets;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE OR REPLACE FUNCTION informerUtilisateurOptionsAchat(idUserInput INT, idSessionInput INT)
-RETURNS INT AS $$
-DECLARE
-    max_billets INT;
-    rec RECORD;
-BEGIN
-    -- Appel de la fonction précédente pour récupérer le nombre de billets autorisés
-    max_billets := recupererNbBilletsAchetables(idUserInput, idSessionInput);
-
-    -- Si NULL, on arrête
-    IF max_billets IS NULL THEN
-        RAISE NOTICE 'Impossible de déterminer le nombre de billets achetables.';
-        RETURN NULL;
-    END IF;
-
-    -- Afficher les options de billets disponibles par catégorie
-    RAISE NOTICE 'Voici les prix des billets par catégories pour l''evenement souhaite :';
-
-    FOR rec IN EXECUTE 'SELECT nomCategorie, prix, billets_restants
-                        FROM vue_dispo_par_categorie
-                        WHERE idSession = $1'
-                        USING idSessionInput
-
-    LOOP
-        RAISE NOTICE '- Categorie % : %euros -> % billets restants',
-            rec.nomCategorie, rec.prix, rec.billets_restants;
-    END LOOP;
 
     RETURN max_billets;
 END;
@@ -196,7 +144,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-
+/*
 CREATE OR REPLACE FUNCTION creer_transaction_avec_montant_zero(idPanierInput)
 RETURNS TRIGGER AS $$
 BEGIN
@@ -207,13 +155,13 @@ BEGIN
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
-
+*/
 
 
 --vérifie que l'utilisateur est bien dans le sas de la session et
 -- avec un statutSas 'en cours'
 CREATE OR REPLACE FUNCTION preReserver(
-    idPanierUser INT;
+    idPanierUser INT,
     demandes JSONB
 ) RETURNS VOID AS $$
 DECLARE
@@ -221,36 +169,37 @@ DECLARE
     idSessionFound INT;
     idQueueFound INT;
 BEGIN
-    -- on recupère l'iduser et idsession a partir de l'idpanier
-    SELECT
-    idUser, idSession INTO idUserFound, idsessionFound
+    -- On récupère idUser et idSession à partir de l'idPanier
+    SELECT idUser, idSession INTO idUserFound, idSessionFound
     FROM PreReservation p
     WHERE p.idPanier = idPanierUser;
 
-    -- on recuper l'idqueue
-    SELECT idQueue AS idQueueFound
+    -- On récupère idQueue
+    SELECT idQueue INTO idQueueFound
     FROM FileAttente f
-    WHERE f.idSession = idSessionFound;
+    WHERE f.idSessionVente = idSessionFound;
 
-    -- Vérifier que l'utilisateur est bien dans le SAS associé à cette file
+    -- Vérifier que l'utilisateur est bien dans le SAS
     IF NOT EXISTS (
         SELECT 1 FROM SAS s
-        WHERE s.idQueue = idQueueFound AND s.idUser = idUserFound
-            AND statusSAS = 'en cours'
+        WHERE s.idQueue = idQueueFound
+          AND s.idUser = idUserFound
+          AND statusSAS = 'en cours'
     ) THEN
-        RAISE NOTICE 'Utilisateur % non présent dans le SAS de la queue % pour l''événement %', idUserFound, idQueueFound, idEvent;
+        RAISE NOTICE 'Utilisateur % non présent dans le SAS de la queue %', idUserFound, idQueueFound;
         RAISE NOTICE 'La pré-réservation ne peut aboutir';
         RETURN;
     END IF;
 
+    -- Appels aux fonctions associées
     PERFORM prereserver_demande(idPanierUser, idUserFound, idSessionFound, demandes);
-    PERFORM creer_transaction_avec_montant_zero(idPanierUser);
-
+    PERFORM creer_transaction_avec_montant_calcule(idPanierUser);
 END;
 $$ LANGUAGE plpgsql;
 
 
 
+/*
 CREATE OR REPLACE FUNCTION preReserverAvecEmail(
     emailUser VARCHAR,
     descriptionEvent TEXT,
@@ -289,7 +238,7 @@ $$ LANGUAGE plpgsql;
 
 SELECT idPanier
 FROM PreReservation
-WHERE idUser = getUserIdByEmail(emailUser);
+WHERE idUser = getUserIdByEmail(emailUser);*/
 
 
 --test avec un nb de billets raisonnable et pour un utilisateur qui est dans le sas

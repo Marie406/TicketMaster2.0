@@ -1,4 +1,5 @@
 \i CREATION/creation_tables.sql
+\i CREATION/fonctions_communes.sql
 \i CREATION/all_triggers.sql
 \i CREATION/insert_data.sql
 --\i CREATION/gestion_files.sql

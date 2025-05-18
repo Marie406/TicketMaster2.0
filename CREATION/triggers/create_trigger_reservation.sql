@@ -6,10 +6,9 @@ BEGIN
     IF OLD.statutTransaction = 'en attente' AND NEW.statutTransaction = 'validé' THEN
         SELECT idUser FROM Transac t
         WHERE t.idTransac = NEW.idTransac;
-            -- Insérer une réservation liée à la transaction
-            INSERT INTO Reservation(dateReservation, idUser, idTransac)
-            VALUES (NOW(), idUser, NEW.idTransac);
-        END LOOP;
+        -- Insérer une réservation liée à la transaction
+        INSERT INTO Reservation(dateReservation, idUser, idTransac)
+        VALUES (NOW(), idUser, NEW.idTransac);
     END IF;
 
     RETURN NEW;

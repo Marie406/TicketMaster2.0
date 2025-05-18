@@ -25,7 +25,37 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+CREATE OR REPLACE FUNCTION creer_transaction_avec_montant_calcule(idPanierInput INTEGER)
+RETURNS VOID AS $$
+DECLARE
+    total NUMERIC(10,2) := 0;
+    reduction_percent NUMERIC(5,2) := 0;
+    reduction NUMERIC(10,2) := 0;
+    prix_billet NUMERIC(10,2);
+BEGIN
+    -- Calcul du montant total brut du panier
+    FOR prix_billet IN
+        SELECT prix
+        FROM Billet
+        WHERE idPanier = idPanierInput
+    LOOP
+        total := total + prix_billet;
+    END LOOP;
 
+    -- Appliquer une réduction si applicable
+    reduction_percent := calculer_reduction(idPanierInput);
+    reduction := total * reduction_percent;
+    total := total - reduction;
+
+    -- Insérer la transaction avec le montant calculé
+    INSERT INTO Transac(montant, statutTransaction, idPanier)
+    VALUES (total, 'en attente', idPanierInput);
+END;
+$$ LANGUAGE plpgsql;
+
+
+
+/*
 CREATE OR REPLACE FUNCTION mettre_a_jour_montant_transaction()
 RETURNS TRIGGER AS $$
 DECLARE
@@ -68,3 +98,4 @@ AFTER UPDATE OF idPanier ON Billet
 FOR EACH ROW
 WHEN (OLD.idPanier IS DISTINCT FROM NEW.idPanier AND NEW.idPanier IS NOT NULL)
 EXECUTE FUNCTION mettre_a_jour_montant_transaction();
+*/
