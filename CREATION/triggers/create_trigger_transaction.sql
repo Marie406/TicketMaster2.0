@@ -1,19 +1,3 @@
-CREATE OR REPLACE FUNCTION creer_transaction_avec_montant_zero()
-RETURNS TRIGGER AS $$
-BEGIN
-    -- Créer une transaction avec un montant initial à 0 lorsque la pré-réservation est créée
-    INSERT INTO Transac(montant, statutTransaction, idPanier)
-    VALUES (0, 'en attente', NEW.idPanier);
-
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE TRIGGER trigger_creer_transac_avec_zero
-AFTER INSERT ON PreReservation
-FOR EACH ROW
-EXECUTE FUNCTION creer_transaction_avec_montant_zero();
-
 CREATE OR REPLACE FUNCTION calculer_reduction(idPanierInput INT)
 RETURNS NUMERIC(5,2) AS $$
 DECLARE
@@ -52,8 +36,8 @@ DECLARE
     prix_billet NUMERIC(10,2);
 BEGIN
     -- Calculer le montant total du panier avant réduction
-    FOR prix_billet IN 
-        SELECT prix 
+    FOR prix_billet IN
+        SELECT prix
         FROM Billet
         WHERE idPanier = NEW.idPanier
     LOOP
@@ -84,4 +68,3 @@ AFTER UPDATE OF idPanier ON Billet
 FOR EACH ROW
 WHEN (OLD.idPanier IS DISTINCT FROM NEW.idPanier AND NEW.idPanier IS NOT NULL)
 EXECUTE FUNCTION mettre_a_jour_montant_transaction();
-

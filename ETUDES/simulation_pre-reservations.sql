@@ -54,7 +54,7 @@ BEGIN
     END IF;
 
     -- Afficher
-    RAISE NOTICE 'Bonjour utilisateur %, vous avez un compte % et pouvez acheter jusqu''à % billets pendant cette session.', 
+    RAISE NOTICE 'Bonjour utilisateur %, vous avez un compte % et pouvez acheter jusqu''à % billets pendant cette session.',
         idUserInput, type_utilisateur, max_billets;
 
     RETURN max_billets;
@@ -78,12 +78,12 @@ BEGIN
 
     -- Afficher les options de billets disponibles par catégorie
     RAISE NOTICE 'Voici les prix des billets par catégories pour l''evenement souhaite :';
-    
-    FOR rec IN EXECUTE 'SELECT nomCategorie, prix, billets_restants 
-                        FROM vue_dispo_par_categorie 
-                        WHERE idSession = $1' 
+
+    FOR rec IN EXECUTE 'SELECT nomCategorie, prix, billets_restants
+                        FROM vue_dispo_par_categorie
+                        WHERE idSession = $1'
                         USING idSessionInput
-                        
+
     LOOP
         RAISE NOTICE '- Categorie % : %euros -> % billets restants',
             rec.nomCategorie, rec.prix, rec.billets_restants;
@@ -96,7 +96,8 @@ $$ LANGUAGE plpgsql;
 
 --si la demande du client est faisable en terme de nb de billet demandés et autorisés + disponibles
 -- alors crée un panier et associe les billets des catégories désirées à cet idPanier
-CREATE OR REPLACE FUNCTION creerPreReservation(
+CREATE OR REPLACE FUNCTION prereserver_demande(
+    idPanierInput INT,
     idUserInput INT,
     idSessionInput INT,
     demandes JSONB
@@ -112,7 +113,6 @@ DECLARE
     cat TEXT;
     nbDemandes INT;
     idCategorieTrouvee INT;
-    idPanierCree INT;
 BEGIN
     -- Récupérer idEvent et idLieu à partir de la session
     SELECT idEvent, idLieu INTO idEventFound, idLieuFound
@@ -125,7 +125,7 @@ BEGIN
     END IF;
 
     -- Récupérer le max de billets autorisé
-    max_billets:= informerUtilisateurOptionsAchat(idUserInput, idSessionInput);
+    max_billets := recupererNbBilletsAchetables(idUserInput, idSessionInput);
 
     IF max_billets IS NULL THEN
         RAISE NOTICE 'Impossible de récupérer la limite de billets.';
@@ -144,7 +144,7 @@ BEGIN
         SELECT G.idCategorie INTO idCategorieTrouvee
         FROM Grille G
         JOIN CategorieSiege C ON G.idCategorie = C.idCategorie
-        WHERE G.idEvent = idEventFound 
+        WHERE G.idEvent = idEventFound
           AND C.idLieu = idLieuFound
           AND C.nomCategorie = cat;
 
@@ -181,46 +181,56 @@ BEGIN
         RETURN NULL;
     END IF;
 
-    -- Création du panier
-    INSERT INTO PreReservation(idUser, idSession)
-    VALUES (idUserInput, idSessionInput)
-    RETURNING idPanier INTO idPanierCree;
-
     -- on autorise le changement de statut des billets
     PERFORM set_config('myapp.allow_statut_change', 'on', true);
     PERFORM set_config('myapp.allow_idpanier_change', 'on', true);
 
     -- Affectation des billets au panier
     UPDATE Billet
-    SET idPanier = idPanierCree,
+    SET idPanier = idPanierInput,
         statutBillet = 'dans un panier'
     WHERE idBillet = ANY(billets_dispos);
 
     RAISE NOTICE 'Pré-réservation effectuée pour utilisateur % de % billets', idUserInput, total_demandes;
-    RETURN idPanierCree;
+    RETURN idPanierUser;
 END;
 $$ LANGUAGE plpgsql;
+
+
+CREATE OR REPLACE FUNCTION creer_transaction_avec_montant_zero()
+RETURNS TRIGGER AS $$
+BEGIN
+    -- Créer une transaction avec un montant initial à 0 lorsque la pré-réservation est créée
+    INSERT INTO Transac(montant, statutTransaction, idPanier)
+    VALUES (0, 'en attente', NEW.idPanier);
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+
 
 --vérifie que l'utilisateur est bien dans le sas de la session et
 -- avec un statutSas 'en cours'
 CREATE OR REPLACE FUNCTION preReserver(
-    emailUser VARCHAR,
-    descriptionEvent TEXT,
+    idPanierUser INT;
     demandes JSONB
 ) RETURNS VOID AS $$
 DECLARE
     idUserFound INT;
-    idEventFound INT;
-    idQueueFound INT;
+    idSessionFound INT;
+    idQueue INT;
 BEGIN
-    -- Récupérer l'identifiant de l'utilisateur
-    idUserFound := getUserIdByEmail(emailUser);
+    -- on recupère l'iduser et idsession a partir de l'idpanier
+    SELECT
+    idUser, idSession INTO idUserFound, idsessionFound
+    FROM PreReservation p
+    WHERE p.idPanier = idPanierUser;
 
-    -- Récupérer l'identifiant de l'événement
-    idEventFound := getEventIdByDescription(descriptionEvent);
-
-    -- Obtenir l'identifiant de la file d'attente active
-    idQueueFound := get_active_queue_for_event(idEventFound);
+    -- on recuper l'idqueue
+    SELECT idQueue AS idQueueFound
+    FROM FileAttente f
+    WHERE f.idSession = idSessionFound;
 
     -- Vérifier que l'utilisateur est bien dans le SAS associé à cette file
     IF NOT EXISTS (
@@ -228,21 +238,20 @@ BEGIN
         WHERE s.idQueue = idQueueFound AND s.idUser = idUserFound
             AND statusSAS = 'en cours'
     ) THEN
-        RAISE NOTICE 'Utilisateur % non présent dans le SAS de la file % pour l''événement %', idUserFound, idQueueFound, descriptionEvent;
+        RAISE NOTICE 'Utilisateur % non présent dans le SAS de la queue % pour l''événement %', idUserFound, idQueueFound, idEvent;
         RAISE NOTICE 'La pré-réservation ne peut aboutir';
         RETURN;
     END IF;
 
-    -- Appel de la fonction de pré-réservation
-    PERFORM creerPreReservation(idUserFound, idQueueFound, demandes);
+    PERFORM prereserver_demande(idPanierUser,idUserFound idSessionFound, demandes);
+    PERFORM creer_transaction_avec_montant_zero();
 
 END;
 $$ LANGUAGE plpgsql;
 
 
-
 --test avec un nb de billets raisonnable et pour un utilisateur qui est dans le sas
-SELECT preReserver('daniel@email.com','Tournee mondiale de Stray Kids','{"CAT_3": 2, "CAT_4": 2}'::jsonb);
+--SELECT preReserverAvecEmail('daniel@email.com','Tournee mondiale de Stray Kids','{"CAT_3": 2, "CAT_4": 2}'::jsonb);
 
 --test nb de billets trop élevé pr statut
 --SELECT preReserver('daniel@email.com','Tournee mondiale de Stray Kids','{"CAT_3": 3, "CAT_4": 4}'::jsonb);
@@ -252,6 +261,6 @@ SELECT preReserver('daniel@email.com','Tournee mondiale de Stray Kids','{"CAT_3"
 
 --tester qd nb billets coherent avec limite fixé par la sessionVente mais les stocks sont insuffisants
 
---montrer les resultats des tests avec 
+--montrer les resultats des tests avec
 --select * from prereservation;
 --select * from billet where idpanier is not null;
