@@ -1,6 +1,44 @@
 DROP TRIGGER IF EXISTS trg_annuler_pre_resa_if_sas_expelled ON SAS;
 DROP TRIGGER IF EXISTS trigger_creer_panier_prereservation ON SAS;
 
+DROP TRIGGER IF EXISTS trigger_verrou_modification_sas ON SAS;
+DROP TRIGGER IF EXISTS trigger_verrou_creation_sas ON SAS;
+
+CREATE OR REPLACE FUNCTION verrouiller_modification_sas()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF coalesce(current_setting('myapp.allow_modify_sas', true), 'off') IS DISTINCT FROM 'on' THEN
+        RAISE EXCEPTION 'Modification du sas interdite hors trigger/fonction autorisé.';
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trigger_verrou_modification_sas
+BEFORE UPDATE ON SAS
+FOR EACH ROW
+EXECUTE FUNCTION verrouiller_modification_sas();
+
+
+CREATE OR REPLACE FUNCTION verrouiller_creation_sas()
+RETURNS TRIGGER AS $$
+BEGIN
+
+    IF coalesce(current_setting('myapp.allow_create_sas', true), 'off') IS DISTINCT FROM 'on' THEN
+        RAISE EXCEPTION 'Création du sas interdite hors trigger/fonction autorisé.';
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trigger_verrou_creation_sas
+BEFORE INSERT ON SAS
+FOR EACH ROW
+EXECUTE FUNCTION verrouiller_creation_sas();
+
+
+
 -- Fonction trigger qui annule la pré‑réservation (supprime la ligne dans PreReservation)
 -- lorsque l'utilisateur quitte le SAS.
 CREATE OR REPLACE FUNCTION annuler_pre_reservation_if_user_lost_SAS()
@@ -61,4 +99,3 @@ CREATE TRIGGER trigger_creer_panier_prereservation
 AFTER INSERT ON SAS
 FOR EACH ROW
 EXECUTE FUNCTION creer_prereservation();
-

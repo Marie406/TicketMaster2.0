@@ -159,8 +159,8 @@ DECLARE
     idQueueFound INT;
 BEGIN
     -- On récupère idUser et idSession à partir de l'idPanier
-    --repose sur le fait que les lignes sont supprimées de 
-    --PreReservation pour un utilisateur dès qu'il sort du sas 
+    --repose sur le fait que les lignes sont supprimées de
+    --PreReservation pour un utilisateur dès qu'il sort du sas
     --ou qu'il valide sa transaction
     SELECT idUser, idSession INTO idUserFound, idSessionFound
     FROM PreReservation p
@@ -183,13 +183,10 @@ BEGIN
         RETURN;
     END IF;
 
-    -- Appels aux fonctions associées
     PERFORM prereserver_demande(idPanierUser, idUserFound, idSessionFound, demandes);
     PERFORM creer_transaction_avec_montant_calcule(idPanierUser);
 END;
 $$ LANGUAGE plpgsql;
-
-
 
 
 CREATE OR REPLACE FUNCTION preReserverAvecEmail(
@@ -220,7 +217,7 @@ $$ LANGUAGE plpgsql;
 
 
 --test avec un nb de billets raisonnable et pour un utilisateur qui est dans le sas
-SELECT preReserverAvecEmail('daniel@email.com','Tournee mondiale de Stray Kids','{"CAT_3": 2, "CAT_4": 2}'::jsonb);
+--SELECT preReserverAvecEmail('daniel@email.com','{"CAT_3": 2, "CAT_4": 2}'::jsonb);
 
 --test nb de billets trop élevé pr statut
 --SELECT preReserver('daniel@email.com','Tournee mondiale de Stray Kids','{"CAT_3": 3, "CAT_4": 4}'::jsonb);

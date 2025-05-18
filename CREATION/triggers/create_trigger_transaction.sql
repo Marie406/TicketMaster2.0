@@ -1,7 +1,41 @@
+DROP TRIGGER IF EXISTS trigger_billets_vendus ON Transac;
 DROP TRIGGER IF EXISTS trigger_creer_reservations_apres_validation ON Transac;
 DROP TRIGGER IF EXISTS trigger_billets_vendus ON Transac;
---DROP TRIGGER IF EXISTS trigger_supprimer_prereservation ON Transac;
+DROP TRIGGER IF EXISTS trigger_verrou_modification_transaction ON Transac;
+DROP TRIGGER IF EXISTS trigger_verrou_creation_transaction ON Transac;
 
+CREATE OR REPLACE FUNCTION verrouiller_modification_transaction()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF coalesce(current_setting('myapp.allow_modify_transac', true), 'off') IS DISTINCT FROM 'on' THEN
+        RAISE EXCEPTION 'Modification de transaction interdite hors trigger/fonction autorisé.';
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trigger_verrou_modification_transaction
+BEFORE UPDATE ON Transac
+FOR EACH ROW
+EXECUTE FUNCTION verrouiller_modification_transaction();
+
+
+CREATE OR REPLACE FUNCTION verrouiller_creation_transaction()
+RETURNS TRIGGER AS $$
+BEGIN
+
+    IF coalesce(current_setting('myapp.allow_create_transac', true), 'off') IS DISTINCT FROM 'on' THEN
+        RAISE EXCEPTION 'Création de transaction interdite hors trigger/fonction autorisé.';
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trigger_verrou_creation_transaction
+BEFORE INSERT ON Transac
+FOR EACH ROW
+EXECUTE FUNCTION verrouiller_creation_transaction();
 
 CREATE OR REPLACE FUNCTION calculer_reduction(idPanierInput INT)
 RETURNS NUMERIC(5,2) AS $$
@@ -162,8 +196,5 @@ EXECUTE FUNCTION maj_statut_sas_apres_validation_transac();
 /*CREATE TRIGGER trigger_supprimer_prereservation
 AFTER UPDATE OF statutTransaction ON Transac
 FOR EACH ROW
-WHEN (
-    OLD.statutTransaction IS DISTINCT FROM NEW.statutTransaction
-    AND NEW.statutTransaction = 'validé'
-)
-EXECUTE FUNCTION supprimer_prereservation_si_transaction_validee();*/
+WHEN (OLD.idPanier IS DISTINCT FROM NEW.idPanier AND NEW.idPanier IS NOT NULL)
+EXECUTE FUNCTION mettre_a_jour_montant_transaction();*/

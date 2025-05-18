@@ -1,5 +1,44 @@
 DROP TRIGGER IF EXISTS trigger_verifier_et_attribuer_session ON SessionVente;
 DROP TRIGGER IF EXISTS trigger_nettoyer_billets_apres_annulation ON SessionVente;
+DROP TRIGGER IF EXISTS trigger_creer_sv_attente ON SessionVente;
+
+DROP TRIGGER IF EXISTS trigger_verrou_modification_sv ON SessionVente;
+DROP TRIGGER IF EXISTS trigger_verrou_creation_sv ON SessionVente;
+
+CREATE OR REPLACE FUNCTION verrouiller_modification_sv()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF coalesce(current_setting('myapp.allow_modify_sv', true), 'off') IS DISTINCT FROM 'on' THEN
+        RAISE EXCEPTION 'Modification de la sv interdite hors trigger/fonction autorisé.';
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trigger_verrou_modification_sv
+BEFORE UPDATE ON SessionVente
+FOR EACH ROW
+EXECUTE FUNCTION verrouiller_modification_sv();
+
+
+CREATE OR REPLACE FUNCTION verrouiller_creation_sv()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF coalesce(current_setting('myapp.allow_create_sv', true), 'off') IS DISTINCT FROM 'on' THEN
+        RAISE EXCEPTION 'Création de la sv interdite hors trigger/fonction autorisé.';
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trigger_verrou_creation_sv
+BEFORE INSERT ON SessionVente
+FOR EACH ROW
+EXECUTE FUNCTION verrouiller_creation_sv();
+
+
+
+
 
 -- Automatise l'attibution de l'id se session aux billets à vendre dans cette session
 CREATE OR REPLACE FUNCTION verifier_et_attribuer_session_vente()
@@ -38,10 +77,8 @@ BEGIN
     END IF;
 
     RETURN NULL;
-END; 
+END;
 $$ LANGUAGE plpgsql;
-
-
 
 
 CREATE TRIGGER trigger_verifier_et_attribuer_session
@@ -67,3 +104,21 @@ AFTER DELETE ON SessionVente
 FOR EACH ROW
 EXECUTE FUNCTION nettoyer_billets_session_annulee();
 
+
+CREATE OR REPLACE FUNCTION creer_file_attente()
+RETURNS TRIGGER AS $$
+DECLARE
+    id_new_file INT;
+BEGIN
+    INSERT INTO FileAttente (capaciteQueue, idSessionVente)
+    VALUES (LEAST(NEW.nbBilletsMisEnVente*2, 1000), NEW.idSession) -- 100 peut être une valeur par défaut ou à adapter
+    RETURNING idQueue INTO id_new_file;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trigger_creer_file_attente
+AFTER INSERT ON SessionVente
+FOR EACH ROW
+EXECUTE FUNCTION creer_file_attente();
