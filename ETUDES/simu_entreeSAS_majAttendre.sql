@@ -1,16 +1,50 @@
 
---à executer souvent (ttes les deux minutes pr simuler un vrai timer vu que le temps max ds le sas est 2 min)
+-- --à executer souvent (ttes les deux minutes pr simuler un vrai timer vu que le temps max ds le sas est 2 min)
+-- CREATE OR REPLACE FUNCTION verifierExpulsionsSAS()
+-- RETURNS VOID AS $$
+-- BEGIN
+--     PERFORM set_config('myapp.allow_modify_sas', 'on', true);
+--     UPDATE SAS
+--     SET statusSAS = 'expulse', sortieSAS = now()
+--     WHERE statusSAS = 'en cours'
+--     AND now() > entreeSAS + timeoutSAS;
+--     PERFORM set_config('myapp.allow_modify_sas', 'off', true);
+-- END;
+-- $$ LANGUAGE plpgsql;
+
 CREATE OR REPLACE FUNCTION verifierExpulsionsSAS()
 RETURNS VOID AS $$
 BEGIN
+    -- Autoriser les modifications sur la SAS
     PERFORM set_config('myapp.allow_modify_sas', 'on', true);
+
+    -- Mise à jour de la table SAS : expulser les utilisateurs dont la date d'entrée + timeoutSAS est dépassée
     UPDATE SAS
     SET statusSAS = 'expulse', sortieSAS = now()
     WHERE statusSAS = 'en cours'
-    AND now() > entreeSAS + timeoutSAS;
+      AND now() > entreeSAS + timeoutSAS;
+
+    -- Mise à jour de la table Transac : pour chaque transaction en attente liée à une pré‑réservation
+    -- d'un utilisateur expulsé, on change le statut à "annulé"
+    PERFORM set_config('myapp.allow_modify_transac', 'on', true);
+    UPDATE Transac t
+    SET statutTransaction = 'annulé'
+    WHERE statutTransaction = 'en attente'
+      AND idPanier IN (
+          SELECT pr.idPanier
+          FROM PreReservation pr
+          WHERE pr.idUser IN (
+              SELECT s.idUser
+              FROM SAS s
+              WHERE s.statusSAS = 'expulse'
+          )
+      );
+    PERFORM set_config('myapp.allow_modify_transac', 'off', true);
+    -- Désactiver la possibilité de modifier SAS après les mises à jour
     PERFORM set_config('myapp.allow_modify_sas', 'off', true);
 END;
 $$ LANGUAGE plpgsql;
+
 
 --met tt les utilisateurs des diff files qui sont rang = 1 dans le sas si ceux
 --de leurs files qui étaient dans le sas ont fini/ont été expulsés

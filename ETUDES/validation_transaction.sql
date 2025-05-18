@@ -19,7 +19,20 @@ BEGIN
     JOIN PreReservation p ON t.idPanier = p.idPanier
     WHERE t.statutTransaction = 'en attente'
       AND p.idUser = userId
+    --WHERE p.idUser = userId
     LIMIT 1;
+
+    -- SELECT panierId INTO panierId
+    -- FROM PreReservation p
+    -- WHERE p.idUser = userId;
+    --
+    --
+    -- IF panierId IS NULL THEN
+    --     RAISE EXCEPTION 'Aucune prereservation en attente trouvée pour cet utilisateur.';
+    -- END IF;
+
+
+    --PERFORM creer_transaction_avec_montant_calcule(panierId);
 
     IF panierId IS NULL THEN
         RAISE EXCEPTION 'Aucune transaction en attente trouvée pour cet utilisateur.';
