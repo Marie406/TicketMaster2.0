@@ -1,55 +1,4 @@
--- Recherche de l'utilisateur, renvoie NULL si introuvable
-CREATE OR REPLACE FUNCTION getUserIdByEmail(emailInput VARCHAR)
-RETURNS INT AS $$
-DECLARE
-    userId INT;
-BEGIN
-    SELECT idUser INTO userId
-    FROM Utilisateur
-    WHERE email = emailInput;
-
-    RETURN userId;
-END;
-$$ LANGUAGE plpgsql;
-
--- Renvoie NULL si aucun événement ne correspond
-CREATE OR REPLACE FUNCTION getEventIdByDescription(descriptionInput TEXT)
-RETURNS INT AS $$
-DECLARE
-    eventId INT;
-BEGIN
-    SELECT idEvent INTO eventId
-    FROM Concert
-    WHERE descriptionEvent = descriptionInput;
-
-    RETURN eventId;  
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE OR REPLACE FUNCTION get_active_queue_for_event(id_event_var INT)
-RETURNS INT AS $$
-DECLARE
-    idFile INT;
-BEGIN
-    -- On cherche la file d'attente liée à une session active pour l'événement
-    SELECT f.idQueue
-    INTO idFile
-    FROM FileAttente f
-    JOIN SessionVente s ON f.idSessionVente = s.idSession
-    WHERE s.idEvent = id_event_var
-      AND now() BETWEEN s.dateDebutSession AND s.dateFinSession
-    LIMIT 1;
-
-    IF NOT FOUND THEN
-        RAISE EXCEPTION 'Aucune file active trouvée pour l''événement %.', id_event_var;
-    END IF;
-
-    RETURN idFile;
-END;
-$$ LANGUAGE plpgsql;
-
-
--- 2. Traitement de l'entrée dans la file si idUser est fourni
+--  Traitement de l'entrée dans la file si idUser est fourni
 CREATE OR REPLACE FUNCTION tryEnterQueue(idUtilisateur INT, id_event_var INT)
 RETURNS VOID AS $$
 DECLARE
@@ -109,7 +58,7 @@ $$ LANGUAGE plpgsql;
 
 
 
--- 3. Fonction principale
+--  Fonction principale
 CREATE OR REPLACE FUNCTION entrerFileAttente(emailUser VARCHAR, descriptionEvent_donnee TEXT)
 RETURNS VOID AS $$
 DECLARE

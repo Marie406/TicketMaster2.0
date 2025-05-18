@@ -1,3 +1,5 @@
+DROP FUNCTION prereserver_demande(integer,integer,integer,jsonb);
+
 CREATE OR REPLACE FUNCTION recupererNbBilletsAchetables(idUserInput INT, idSessionInput INT)
 RETURNS INT AS $$
 DECLARE
@@ -50,7 +52,7 @@ CREATE OR REPLACE FUNCTION prereserver_demande(
     idSessionInput INT,
     demandes JSONB
 )
-RETURNS INT AS $$
+RETURNS VOID AS $$
 DECLARE
     idEventFound INT;
     idLieuFound INT;
@@ -69,7 +71,7 @@ BEGIN
 
     IF NOT FOUND THEN
         RAISE NOTICE 'Session % introuvable.', idSessionInput;
-        RETURN NULL;
+        RETURN;
     END IF;
 
     -- Récupérer le max de billets autorisé
@@ -77,7 +79,7 @@ BEGIN
 
     IF max_billets IS NULL THEN
         RAISE NOTICE 'Impossible de récupérer la limite de billets.';
-        RETURN NULL;
+        RETURN;
     END IF;
 
     -- Vérification des disponibilités
@@ -99,7 +101,7 @@ BEGIN
         IF NOT FOUND THEN
             RAISE NOTICE 'Catégorie % introuvable pour l''événement.', cat;
             RAISE NOTICE 'La pré-réservation ne peut aboutir';
-            RETURN NULL;
+            RETURN;
         END IF;
 
         -- Récupérer les billets disponibles pour cette catégorie
@@ -116,7 +118,7 @@ BEGIN
         IF array_length(billets_temp, 1) < nbDemandes THEN
             RAISE NOTICE 'Pas assez de billets disponibles pour la catégorie %.', cat;
             RAISE NOTICE 'La pré-réservation ne peut aboutir';
-            RETURN NULL;
+            RETURN;
         END IF;
 
         billets_dispos := billets_dispos || billets_temp;
@@ -126,7 +128,7 @@ BEGIN
     IF total_demandes > max_billets THEN
         RAISE NOTICE 'Vous avez demandé % billets, mais vous ne pouvez en acheter que %.', total_demandes, max_billets;
         RAISE NOTICE 'La pré-réservation ne peut aboutir';
-        RETURN NULL;
+        RETURN;
     END IF;
 
     -- on autorise le changement de statut des billets
@@ -140,22 +142,9 @@ BEGIN
     WHERE idBillet = ANY(billets_dispos);
 
     RAISE NOTICE 'Pré-réservation effectuée pour utilisateur % de % billets', idUserInput, total_demandes;
-    RETURN idPanierUser;
+    RETURN;
 END;
 $$ LANGUAGE plpgsql;
-
-/*
-CREATE OR REPLACE FUNCTION creer_transaction_avec_montant_zero(idPanierInput)
-RETURNS TRIGGER AS $$
-BEGIN
-    -- Créer une transaction avec un montant initial à 0 lorsque la pré-réservation est créée
-    INSERT INTO Transac(montant, statutTransaction, idPanier)
-    VALUES (0, 'en attente', idPanierInput);
-
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-*/
 
 
 --vérifie que l'utilisateur est bien dans le sas de la session et
@@ -170,6 +159,9 @@ DECLARE
     idQueueFound INT;
 BEGIN
     -- On récupère idUser et idSession à partir de l'idPanier
+    --repose sur le fait que les lignes sont supprimées de 
+    --PreReservation pour un utilisateur dès qu'il sort du sas 
+    --ou qu'il valide sa transaction
     SELECT idUser, idSession INTO idUserFound, idSessionFound
     FROM PreReservation p
     WHERE p.idPanier = idPanierUser;
@@ -199,7 +191,7 @@ $$ LANGUAGE plpgsql;
 
 
 
-/*
+
 CREATE OR REPLACE FUNCTION preReserverAvecEmail(
     emailUser VARCHAR,
     descriptionEvent TEXT,
@@ -207,42 +199,28 @@ CREATE OR REPLACE FUNCTION preReserverAvecEmail(
 ) RETURNS VOID AS $$
 DECLARE
     idUserFound INT;
-    idEventFound INT;
-    idQueueFound INT;
+    idPanierFound INT;
 BEGIN
-    -- Récupérer l'identifiant de l'utilisateur
+    -- Récupérer l'identifiant de l'utilisateur.
     idUserFound := getUserIdByEmail(emailUser);
 
-    -- Récupérer l'identifiant de l'événement
-    idEventFound := getEventIdByDescription(descriptionEvent);
+    -- Récupérer le panier associé à l'utilisateur.
+    SELECT idPanier
+    INTO idPanierFound
+    FROM PreReservation
+    WHERE idUser = idUserFound;
 
-    -- Obtenir l'identifiant de la file d'attente active
-    idQueueFound := get_active_queue_for_event(idEventFound);
-
-    -- Vérifier que l'utilisateur est bien dans le SAS associé à cette file
-    IF NOT EXISTS (
-        SELECT 1 FROM SAS s
-        WHERE s.idQueue = idQueueFound AND s.idUser = idUserFound
-            AND statusSAS = 'en cours'
-    ) THEN
-        RAISE NOTICE 'Utilisateur % non présent dans le SAS de la file % pour l''événement %', idUserFound, idQueueFound, descriptionEvent;
-        RAISE NOTICE 'La pré-réservation ne peut aboutir';
-        RETURN;
+    IF idPanierFound IS NULL THEN
+        RAISE EXCEPTION 'Aucun panier trouvé pour l''utilisateur %', idUserFound;
     END IF;
 
-    -- Appel de la fonction de pré-réservation
-    PERFORM creerPreReservation(idUserFound, idQueueFound, demandes);
-
+    PERFORM preReserver(idPanierFound, demandes);
 END;
 $$ LANGUAGE plpgsql;
 
-SELECT idPanier
-FROM PreReservation
-WHERE idUser = getUserIdByEmail(emailUser);*/
-
 
 --test avec un nb de billets raisonnable et pour un utilisateur qui est dans le sas
---SELECT preReserverAvecEmail('daniel@email.com','Tournee mondiale de Stray Kids','{"CAT_3": 2, "CAT_4": 2}'::jsonb);
+SELECT preReserverAvecEmail('daniel@email.com','Tournee mondiale de Stray Kids','{"CAT_3": 2, "CAT_4": 2}'::jsonb);
 
 --test nb de billets trop élevé pr statut
 --SELECT preReserver('daniel@email.com','Tournee mondiale de Stray Kids','{"CAT_3": 3, "CAT_4": 4}'::jsonb);

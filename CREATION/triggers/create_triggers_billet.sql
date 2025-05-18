@@ -66,7 +66,7 @@ EXECUTE FUNCTION verifier_statut_billet();
 -- sauf pour le prix si c'est pour appliquer une réduction
 -- et pour le status, si le billet est vendu ou mis dans un panier
 -- et pour le idSession si c'est fait correctement
-CREATE OR REPLACE FUNCTION verrouiller_modifications_billet()
+/*CREATE OR REPLACE FUNCTION verrouiller_modifications_billet()
 RETURNS TRIGGER AS $$
 BEGIN
     -- Refuser toute modification si le billet est déjà vendu
@@ -93,10 +93,10 @@ BEGIN
     END IF;
 
     -- idPanier
-    IF NEW.idPanier IS DISTINCT FROM OLD.idPanier AND
+    /*IF NEW.idPanier IS DISTINCT FROM OLD.idPanier AND
        coalesce(current_setting('myapp.allow_idpanier_change', true), 'off') IS DISTINCT FROM 'on' THEN
         RAISE EXCEPTION 'Modification de idPanier interdite hors trigger autorisé.';
-    END IF;
+    END IF;*/
 
     -- Autres champs non modifiables
     IF NEW.idSiege IS DISTINCT FROM OLD.idSiege
@@ -114,22 +114,7 @@ $$ LANGUAGE plpgsql;
 CREATE TRIGGER trigger_verrou_modifications_billet
 BEFORE UPDATE ON Billet
 FOR EACH ROW
-EXECUTE FUNCTION verrouiller_modifications_billet();
-
-
-
---obsolete -> on ne modifie pas le prix du billet, on calcule une reduction qu'on applique sur le montant de la transaction -> voir trigger transaction
--- Autoriser la modification du prix si on applique une réduction (quand achat par un 'VIP')
-CREATE OR REPLACE FUNCTION appliquer_reduction_billet()
-RETURNS TRIGGER AS $$
-BEGIN
-    -- Créer la variable 'myapp.allow_price_change' dans la base valant 'on' pour autoriser
-    -- temporairement la modification du prix
-    PERFORM set_config('myapp.allow_price_change', 'on', true);
-    NEW.prix := NEW.prix * 0.9;
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
+EXECUTE FUNCTION verrouiller_modifications_billet();*/
 
 
 -- Autoriser la modification du prix si le billet à été mis dans un panier

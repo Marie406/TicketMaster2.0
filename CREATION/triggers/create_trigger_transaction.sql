@@ -1,3 +1,8 @@
+DROP TRIGGER IF EXISTS trigger_creer_reservations_apres_validation ON Transac;
+DROP TRIGGER IF EXISTS trigger_billets_vendus ON Transac;
+--DROP TRIGGER IF EXISTS trigger_supprimer_prereservation ON Transac;
+
+
 CREATE OR REPLACE FUNCTION calculer_reduction(idPanierInput INT)
 RETURNS NUMERIC(5,2) AS $$
 DECLARE
@@ -53,49 +58,78 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-
-
-/*
-CREATE OR REPLACE FUNCTION mettre_a_jour_montant_transaction()
+CREATE OR REPLACE FUNCTION creer_reservations_depuis_transac()
 RETURNS TRIGGER AS $$
 DECLARE
-    total NUMERIC(10,2) := 0;
-    points_fidelite INT;
-    reduction_percent NUMERIC(5,2) := 0;
-    reduction NUMERIC(10,2) := 0;
-    prix_billet NUMERIC(10,2);
+    user_id INT;
 BEGIN
-    -- Calculer le montant total du panier avant réduction
-    FOR prix_billet IN
-        SELECT prix
-        FROM Billet
-        WHERE idPanier = NEW.idPanier
-    LOOP
-        total := total + prix_billet;
-    END LOOP;
+    IF OLD.statutTransaction = 'en attente' AND NEW.statutTransaction = 'validé' THEN
 
-    reduction_percent := calculer_reduction(NEW.idPanier);
+        -- Récupérer l'idUser à partir du panier lié à la transaction
+        SELECT idUser INTO user_id
+        FROM PreReservation
+        WHERE idPanier = NEW.idPanier;
 
-    -- Calculer la réduction totale
-    reduction := total * reduction_percent;
+        IF user_id IS NULL THEN
+            RAISE NOTICE 'Aucun utilisateur trouvé pour le panier %', NEW.idPanier;
+            RETURN NEW;
+        END IF;
 
-    -- Appliquer la réduction sur le montant total
-    total := total - reduction;
-
-    -- Mettre à jour la transaction correspondante avec le montant calculé
-    UPDATE Transac
-    SET montant = total
-    WHERE idPanier = NEW.idPanier;
+        -- Insérer une réservation liée à la transaction
+        INSERT INTO Reservation(dateReservation, idUser, idTransaction)
+        VALUES (NOW(), user_id, NEW.idTransaction);
+    END IF;
 
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
 
+CREATE OR REPLACE FUNCTION marquer_billets_vendus()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF OLD.statutTransaction = 'en attente' AND NEW.statutTransaction = 'validé' THEN
+        UPDATE Billet
+        SET statutBillet = 'vendu'
+        WHERE idPanier = NEW.idPanier;
 
-CREATE TRIGGER trigger_mettre_a_jour_montant_transac
-AFTER UPDATE OF idPanier ON Billet
+        RAISE NOTICE 'Billets associés au panier % marqués comme vendus.', NEW.idPanier;
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+/*CREATE OR REPLACE FUNCTION supprimer_prereservation_si_transaction_validee()
+RETURNS TRIGGER AS $$
+BEGIN
+    -- Vérifie si le statut est passé de 'en attente' à 'validé'
+    IF OLD.statutTransaction = 'en attente' AND NEW.statutTransaction = 'validé' THEN
+        DELETE FROM PreReservation
+        WHERE idPanier = NEW.idPanier;
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;*/
+
+CREATE TRIGGER trigger_creer_reservations_apres_validation
+AFTER UPDATE OF statutTransaction ON Transac
 FOR EACH ROW
-WHEN (OLD.idPanier IS DISTINCT FROM NEW.idPanier AND NEW.idPanier IS NOT NULL)
-EXECUTE FUNCTION mettre_a_jour_montant_transaction();
-*/
+WHEN (OLD.statutTransaction IS DISTINCT FROM NEW.statutTransaction AND NEW.statutTransaction = 'validé')
+EXECUTE FUNCTION creer_reservations_depuis_transac();
+
+CREATE TRIGGER trigger_billets_vendus
+AFTER UPDATE OF statutTransaction ON Transac
+FOR EACH ROW
+WHEN (OLD.statutTransaction IS DISTINCT FROM NEW.statutTransaction AND NEW.statutTransaction = 'validé')
+EXECUTE FUNCTION marquer_billets_vendus();
+
+/*CREATE TRIGGER trigger_supprimer_prereservation
+AFTER UPDATE OF statutTransaction ON Transac
+FOR EACH ROW
+WHEN (
+    OLD.statutTransaction IS DISTINCT FROM NEW.statutTransaction
+    AND NEW.statutTransaction = 'validé'
+)
+EXECUTE FUNCTION supprimer_prereservation_si_transaction_validee();*/

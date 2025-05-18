@@ -166,7 +166,7 @@ CREATE TABLE Transac (
     dateTransaction TIMESTAMP NOT NULL DEFAULT NOW(),
     montant NUMERIC(10,2) NOT NULL CHECK (montant >= 0),
     statutTransaction VARCHAR(50) CHECK (statutTransaction IN ('en attente', 'validé', 'annulé')),
-    idPanier INTEGER REFERENCES PreReservation(idPanier) ON DELETE CASCADE
+    idPanier INTEGER REFERENCES PreReservation(idPanier) ON DELETE SET NULL
 );
 
 -- Ajout des contraintes d'unicité partielle :
