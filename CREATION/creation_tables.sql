@@ -17,8 +17,6 @@ DROP TABLE IF EXISTS Calendrier CASCADE;
 DROP TABLE IF EXISTS Concert CASCADE;
 DROP TABLE IF EXISTS Utilisateur CASCADE;
 
---DROP SEQUENCE IF EXISTS prereservation_idpanier_seq;;
-
 CREATE TABLE Utilisateur(
 idUser SERIAL PRIMARY KEY,
 nomUser VARCHAR(25) NOT NULL,
@@ -51,14 +49,6 @@ capaciteAccueil INTEGER NOT NULL
 CHECK (capaciteAccueil>0)
 );
 
--- CREATE TABLE CategorieSiege(
--- idCategorie INT PRIMARY KEY,
--- nomCategorie VARCHAR(100) NOT NULL
--- CHECK (nomCategorie IN 'CAT_1', 'CAT_2', 'CAT_3', 'CAT_4', 'CAT_5', 'FOSSE'),
--- capaciteCategorie INTEGER NOT NULL
--- CHECK (capaciteCategorie >0),
--- idLieu INT REFERENCES Lieu(idLieu) ON DELETE CASCADE
--- );
 
 CREATE TABLE CategorieSiege(
 idCategorie INT,
@@ -180,13 +170,11 @@ CREATE TABLE Reservation (
     idTransaction INTEGER REFERENCES Transac(idTransaction) ON DELETE CASCADE
 );
 
---les ON DELETE SET NULL c'est parce que le billet continue d'exister même
---si une session de vente est annulée ou si un panier est effacé de la BD
 CREATE TABLE Billet (
     idBillet SERIAL PRIMARY KEY,
     statutBillet VARCHAR(50) CHECK (statutBillet IN ('en vente', 'dans un panier', 'vendu')),
     prix NUMERIC(10,2) NOT NULL,
-    idSiege INT REFERENCES Siege(idSiege) ON DELETE CASCADE, --à modifier ds pdf
+    idSiege INT REFERENCES Siege(idSiege) ON DELETE CASCADE, 
     dateEvent DATE REFERENCES Calendrier(dateEvent) ON DELETE CASCADE,
     idEvent INT REFERENCES Concert(idEvent) ON DELETE CASCADE,
     idPanier INTEGER REFERENCES PreReservation(idPanier) ON DELETE SET NULL,

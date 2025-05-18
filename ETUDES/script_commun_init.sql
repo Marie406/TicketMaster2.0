@@ -39,7 +39,6 @@ SELECT creer_evenement('Gala des Pieces jaunes 2026', ARRAY['GDragon', 'GOT7', '
 
 SELECT * FROM Participe;
 
-
 --organisation des concerts avec date, lieu et heure
 SELECT organiser_concert('Tournee japonaise de Taemin', DATE '2025-07-12', 17, TIME '19:30');
 SELECT organiser_concert('Tournee japonaise de Taemin', DATE '2025-07-19', 18, TIME '20:30');
@@ -48,80 +47,9 @@ SELECT organiser_concert('Concert en France de Stray Kids', DATE '2025-07-22', 1
 
 SELECT * FROM AvoirLieu;
 
---4. simu file attente
---test avec une file d'attente ouverte
 SELECT modifier_session_vente(1, TIMESTAMP '2025-05-07 10:00:00', TIMESTAMP '2025-05-21 23:59:59', 800, FALSE, 6,4);
-SELECT entrerFileAttente('daniel@email.com', 'Tournee mondiale de Stray Kids');
-SELECT entrerFileAttente('hyunjin@email.com', 'Tournee mondiale de Stray Kids');
---SELECT * FROM FileAttente;
---SELECT * FROM Attendre;
-
---test qui verifie qu'un mm utilisateur peut pas entrer dans une file qu'il fait déja
-SELECT entrerFileAttente('felix@email.com', 'Tournee mondiale de Stray Kids');
-SELECT entrerFileAttente('felix@email.com', 'Tournee mondiale de Stray Kids');
---SELECT * FROM FileAttente;
---SELECT * FROM Attendre;
-
---test avec file attente fermée
-SELECT entrerFileAttente('sehun@email.com', 'Concert de Billie Eilish');
---SELECT * FROM FileAttente;
---SELECT * FROM Attendre;
-
---test avec evenement introuvable -> file attente inexistante
-SELECT entrerFileAttente('eunji@email.com', 'Epik High concert');
---SELECT * FROM FileAttente;
---SELECT * FROM Attendre;
-
---tester de remplir une file attente et d'ajouter des gens derriere
-
---test sortir de la file
---SELECT sortirFileAttente('felix@email.com', 'Tournee mondiale de Stray Kids');
---SELECT * FROM FileAttente;
---SELECT * FROM Attendre;
-
---5. sortie de fileAttente et entrée dans le sas où préreservation possible
-SELECT verifierExpulsionsSAS();
-SELECT basculerVersSAS();
-
-
---6. simulation ajout des billets ds panier
---test avec un nb de billets raisonnable et pour un utilisateur qui est dans le sas
-SELECT preReserverAvecEmail('daniel@email.com','Tournee mondiale de Stray Kids', '{"CAT_3": 2, "CAT_4": 2}'::jsonb);
-
---test nb de billets trop élevé pr statut
---SELECT preReserverAvecEmail('daniel@email.com','Tournee mondiale de Stray Kids','{"CAT_3": 3, "CAT_4": 4}'::jsonb);
-
---test utilisateur dans la file mais pas encore dans le sas
---SELECT preReserverAvecEmail('hyunjin@email.com','Tournee mondiale de Stray Kids','{"CAT_1": 2, "CAT_2": 1, "CAT_3":1}'::jsonb);
-
---tester qd nb billets coherent avec limite fixé par la sessionVente mais les stocks sont insuffisants
-
-select * from prereservation;
-select * from billet where statutBillet not in ('en vente');
-
---au bout de 1min+ faire ça puis effectuer transaction pour montrer que impossible car trop tard
---SELECT verifierExpulsionsSAS();
---SELECT basculerVersSAS();
-
---7. simulation de tentatives de paiement de transactions avec différents montants
-
---test qd on est en position de faire une transaction et qu'on donne un montant suffisant
-SELECT effectuerTransaction('daniel@email.com', 264);
-
--- test montant insuffisant
---SELECT effectuerTransaction('daniel@email.com', 60);
-
---test pas de transaction en attente
---SELECT effectuerTransaction('hyunjin@email.com', 400);
-
-select * from billet where statutBillet not in ('en vente');
-select * from transac;
-
---8. visualisation de tous les billets reservés pour un utilisateur
-SELECT * FROM afficher_billets_par_email('daniel@email.com');
 
 
 
---ces deux lignes à executer pour mettre à jour la situation dans Attendre et dans le SAS
---SELECT verifierExpulsionsSAS();
---SELECT basculerVersSAS();
+
+
