@@ -41,5 +41,3 @@ BEGIN
         AND p.idUser = userId;
 END;
 $$ LANGUAGE plpgsql;
-
-SELECT * FROM afficher_billets_par_email('daniel@email.com');

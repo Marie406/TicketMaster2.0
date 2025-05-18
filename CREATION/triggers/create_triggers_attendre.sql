@@ -89,7 +89,7 @@ EXECUTE FUNCTION verifie_periode_session();
 
 
 -- Fonction pour décaler les rangs après la sortie d'un utilisateur de la file d'attente
-/*CREATE OR REPLACE FUNCTION shift_queue_after_exit()
+CREATE OR REPLACE FUNCTION shift_queue_after_exit()
 RETURNS TRIGGER AS $$
 BEGIN
     -- Décrémenter le rang de tous les utilisateurs situés derrière celui qui vient de quitter
@@ -106,7 +106,7 @@ $$ LANGUAGE plpgsql;
 CREATE TRIGGER trg_shift_queue_after_exit
 AFTER DELETE ON Attendre
 FOR EACH ROW
-EXECUTE FUNCTION shift_queue_after_exit();*/
+EXECUTE FUNCTION shift_queue_after_exit();
 
 
 -- fonction qui met le rang d'un un utilisateur

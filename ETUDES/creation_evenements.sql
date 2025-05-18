@@ -14,12 +14,8 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
---2. ajout des artistes pour l'evenement
-SELECT ajouter_artiste('Taemin', 'Kpop');
-SELECT ajouter_artiste('GOT7', 'Kpop');
 
---3. fonction pour créer le concert et ajouter un artiste si inexistant ds bdd
---maj de la table PARTICIPE
+-- fonction pour créer le concert et ajouter un artiste si inexistant ds bdd
 CREATE OR REPLACE FUNCTION creer_evenement(
     descriptionEvent TEXT,
     nom_artistes TEXT[],
@@ -60,14 +56,3 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-
---4. creer le concert
---cet échantillon permet de vérifier que Stray Kids n'est pas ajouté qd il a déjà été créer 
---via les donnees du csv , que BewhY est bien crée et que les ajouts
--- d'artistes de la fct ajouter_artiste fonctionnent 
--- permet aussi de verif qu'on peut bien ajouter plusieurs artistes à un concert -> regarder table Participe
-SELECT creer_evenement('Concert evenement BewhY', ARRAY['BewhY'], 1.0);
-SELECT creer_evenement('Tournee japonaise de Taemin', ARRAY['Taemin'], 1.4);
-SELECT creer_evenement('Promotion nouveau single de GOT7', ARRAY['GOT7'], 1.5);
-SELECT creer_evenement('Concert en France de Stray Kids', ARRAY['Stray Kids'], 1.6);
-SELECT creer_evenement('Gala des Pieces jaunes 2026', ARRAY['GDragon', 'GOT7', 'Stray Kids', 'BewhY'], 1.3);

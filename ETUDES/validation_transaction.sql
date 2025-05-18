@@ -49,16 +49,3 @@ BEGIN
     END IF;
 END;
 $$ LANGUAGE plpgsql;
-
-
---test qd on est en position de faire une transaction et qu'on donne un montant suffisant
-SELECT effectuerTransaction('daniel@email.com', 264);
---pr verif que ça fait bien ce qu'on veut
---select * from billet where statutBillet not in ('en vente', 'dans un panier');
---select * from transaction;
-
--- test montant insuffisant
---SELECT effectuerTransaction('daniel@email.com', 60);
-
---test pas de transaction en attente
---SELECT effectuerTransaction('hyunjin@email.com', 400);

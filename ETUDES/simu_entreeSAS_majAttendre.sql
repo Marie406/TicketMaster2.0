@@ -42,9 +42,9 @@ BEGIN
             WHERE idQueue = q_id AND idUser = u_id;
 
             -- Avancer le rang de tous les utilisateurs suivants dans la file
-            UPDATE Attendre
+            /*UPDATE Attendre
             SET rang = rang - 1
-            WHERE idQueue = q_id AND rang > 1;
+            WHERE idQueue = q_id AND rang > 1;*/
 
         ELSE
             RAISE NOTICE 'La file % a déjà un utilisateur dans le SAS, l''utilisateur % ne peut pas entrer.', q_id, u_id;
@@ -52,7 +52,3 @@ BEGIN
     END LOOP;
 END;
 $$ LANGUAGE plpgsql;
-
---ces deux lignes à executer pour mettre à jour la situation dans Attendre et dans le SAS
-SELECT verifierExpulsionsSAS();
-SELECT basculerVersSAS();

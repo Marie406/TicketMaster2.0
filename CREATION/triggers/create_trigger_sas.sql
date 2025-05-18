@@ -40,7 +40,7 @@ EXECUTE FUNCTION verrouiller_creation_sas();
 
 
 -- Fonction trigger qui annule la pré‑réservation (supprime la ligne dans PreReservation)
--- lorsque l'utilisateur quitte le SAS.
+-- lorsque l'utilisateur est expulse du SAS.
 CREATE OR REPLACE FUNCTION annuler_pre_reservation_if_user_lost_SAS()
 RETURNS TRIGGER AS $$
 DECLARE

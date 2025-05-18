@@ -3,6 +3,7 @@ DROP TRIGGER IF EXISTS trigger_creer_reservations_apres_validation ON Transac;
 DROP TRIGGER IF EXISTS trigger_billets_vendus ON Transac;
 DROP TRIGGER IF EXISTS trigger_verrou_modification_transaction ON Transac;
 DROP TRIGGER IF EXISTS trigger_verrou_creation_transaction ON Transac;
+DROP TRIGGER IF EXISTS trigger_maj_statut_sas ON Transac;
 
 CREATE OR REPLACE FUNCTION verrouiller_modification_transaction()
 RETURNS TRIGGER AS $$
@@ -158,19 +159,6 @@ END;
 $$ LANGUAGE plpgsql;
 
 
-/*CREATE OR REPLACE FUNCTION supprimer_prereservation_si_transaction_validee()
-RETURNS TRIGGER AS $$
-BEGIN
-    -- Vérifie si le statut est passé de 'en attente' à 'validé'
-    IF OLD.statutTransaction = 'en attente' AND NEW.statutTransaction = 'validé' THEN
-        DELETE FROM PreReservation
-        WHERE idPanier = NEW.idPanier;
-    END IF;
-
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;*/
-
 CREATE TRIGGER trigger_creer_reservations_apres_validation
 AFTER UPDATE OF statutTransaction ON Transac
 FOR EACH ROW
@@ -192,9 +180,3 @@ WHEN (
 )
 EXECUTE FUNCTION maj_statut_sas_apres_validation_transac();
 
-
-/*CREATE TRIGGER trigger_supprimer_prereservation
-AFTER UPDATE OF statutTransaction ON Transac
-FOR EACH ROW
-WHEN (OLD.idPanier IS DISTINCT FROM NEW.idPanier AND NEW.idPanier IS NOT NULL)
-EXECUTE FUNCTION mettre_a_jour_montant_transaction();*/

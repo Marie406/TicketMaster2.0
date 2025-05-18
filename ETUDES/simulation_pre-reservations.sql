@@ -215,18 +215,3 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-
---test avec un nb de billets raisonnable et pour un utilisateur qui est dans le sas
---SELECT preReserverAvecEmail('daniel@email.com','{"CAT_3": 2, "CAT_4": 2}'::jsonb);
-
---test nb de billets trop élevé pr statut
---SELECT preReserver('daniel@email.com','Tournee mondiale de Stray Kids','{"CAT_3": 3, "CAT_4": 4}'::jsonb);
-
---test utilisateur dans la file mais pas encore dans le sas
---SELECT preReserver('hyunjin@email.com','Tournee mondiale de Stray Kids','{"CAT_1": 2, "CAT_2": 1, "CAT_3":1}'::jsonb);
-
---tester qd nb billets coherent avec limite fixé par la sessionVente mais les stocks sont insuffisants
-
---montrer les resultats des tests avec
---select * from prereservation;
---select * from billet where idpanier is not null;

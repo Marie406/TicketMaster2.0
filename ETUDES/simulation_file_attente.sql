@@ -83,10 +83,40 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+CREATE OR REPLACE FUNCTION sortirFileAttente(emailUser VARCHAR, descriptionEvent_donnee TEXT)
+RETURNS VOID AS $$
+DECLARE
+    idUtilisateur INT;
+    id_event_var INT;
+    idFile INT;
+BEGIN
+    -- Récupérer l'utilisateur
+    idUtilisateur := getUserIdByEmail(emailUser);
+    IF idUtilisateur IS NULL THEN
+        RAISE NOTICE 'Utilisateur avec l''email % introuvable.', emailUser;
+        RETURN;
+    END IF;
+
+    -- Récupérer l'événement
+    id_event_var := getEventIdByDescription(descriptionEvent_donnee);
+    IF id_event_var IS NULL THEN
+        RAISE NOTICE 'Événement avec la description "%" introuvable.', descriptionEvent_donnee;
+        RETURN;
+    END IF;
+
+    -- Récupérer la file d'attente active
+    idFile := get_active_queue_for_event(id_event_var);
+
+    -- Supprimer l'utilisateur de la file d'attente (table Attendre)
+    DELETE FROM Attendre
+    WHERE idUser = idUtilisateur AND idQueue = idFile;
+
+    RAISE NOTICE 'Utilisateur % retiré de la file d''attente %.', idUtilisateur, idFile;
+END;
+$$ LANGUAGE plpgsql;
 
 
---un peu dangereux de modif ça, en tt cas faudrait que ça ejecte les gens si ils sont dans une file d'attente active de la session et qu'elle est modif
--- ou alors il faudrait empecher de modifier une session dont le debut est avant now
+
 CREATE OR REPLACE FUNCTION modifier_session_vente(
     p_idSession INT,
     p_dateDebut TIMESTAMP,
@@ -98,6 +128,7 @@ CREATE OR REPLACE FUNCTION modifier_session_vente(
 )
 RETURNS VOID AS $$
 BEGIN
+    PERFORM set_config('myapp.allow_modify_sv', 'on', true);
     UPDATE SessionVente
     SET dateDebutSession = p_dateDebut,
         dateFinSession = p_dateFin,
@@ -108,29 +139,3 @@ BEGIN
     WHERE idSession = p_idSession;
 END;
 $$ LANGUAGE plpgsql;
-
-
---test avec une file d'attente ouverte
-SELECT modifier_session_vente(1, TIMESTAMP '2025-05-07 10:00:00', TIMESTAMP '2025-05-21 23:59:59', 800, FALSE, 6,4);
-SELECT entrerFileAttente('daniel@email.com', 'Tournee mondiale de Stray Kids');
-SELECT entrerFileAttente('hyunjin@email.com', 'Tournee mondiale de Stray Kids');
---SELECT * FROM FileAttente;
---SELECT * FROM Attendre;
-
---test qui verifie qu'un mm utilisateur peut pas entrer dans une file qu'il fait déja
-SELECT entrerFileAttente('felix@email.com', 'Tournee mondiale de Stray Kids');
-SELECT entrerFileAttente('felix@email.com', 'Tournee mondiale de Stray Kids');
---SELECT * FROM FileAttente;
---SELECT * FROM Attendre;
-
---test avec file attente fermée
-SELECT entrerFileAttente('sehun@email.com', 'Concert de Billie Eilish');
---SELECT * FROM FileAttente;
---SELECT * FROM Attendre;
-
---test avec evenement introuvable -> file attente inexistante
-SELECT entrerFileAttente('eunji@email.com', 'Epik High concert');
---SELECT * FROM FileAttente;
---SELECT * FROM Attendre;
-
---tester de remplir une file attente et d'ajouter des gens derriere

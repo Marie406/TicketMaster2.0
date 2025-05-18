@@ -10,8 +10,6 @@
 \i ETUDES/simulation_pre-reservations.sql
 \i ETUDES/validation_transaction.sql
 \i ETUDES/consultation_billets_achetes.sql
+--celui ci pendant la soutenance on peut le copier coller au fur et à mesure
+\i ETUDES/script_soutenance.sql
 
-
---ces deux lignes à executer pour mettre à jour la situation dans Attendre et dans le SAS
-SELECT verifierExpulsionsSAS();
-SELECT basculerVersSAS();
