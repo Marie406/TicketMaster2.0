@@ -69,9 +69,11 @@ BEGIN
               AND c.idLieu = NEW.idLieu
             LIMIT NEW.nbBilletsMisEnVente
         )
+        SELECT set_config('myapp.allow_idsession_change', 'on', true);
         UPDATE Billet
         SET idSession = NEW.idSession
         WHERE idBillet IN (SELECT idBillet FROM billets_a_mettre_a_jour);
+        SELECT set_config('myapp.allow_idsession_change', 'off', true);
     ELSE
         RAISE EXCEPTION 'Pas assez de billets disponibles pour l''événement % au lieu %', NEW.idEvent, NEW.idLieu;
     END IF;
@@ -91,10 +93,11 @@ EXECUTE FUNCTION verifier_et_attribuer_session_vente();
 CREATE OR REPLACE FUNCTION nettoyer_billets_session_annulee()
 RETURNS TRIGGER AS $$
 BEGIN
+    PERFORM set_config('myapp.allow_idsession_change', 'on', true);
     UPDATE Billet
     SET idSession = NULL
     WHERE idSession = OLD.idSession;
-
+    PERFORM set_config('myapp.allow_idsession_change', 'off', true);
     RETURN NULL;
 END;
 $$ LANGUAGE plpgsql;
@@ -110,10 +113,11 @@ RETURNS TRIGGER AS $$
 DECLARE
     id_new_file INT;
 BEGIN
+    PERFORM set_config('myapp.allow_create_file', 'on', true);
     INSERT INTO FileAttente (capaciteQueue, idSessionVente)
     VALUES (LEAST(NEW.nbBilletsMisEnVente*2, 1000), NEW.idSession) -- 100 peut être une valeur par défaut ou à adapter
     RETURNING idQueue INTO id_new_file;
-
+    PERFORM set_config('myapp.allow_create_file', 'off', true);
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;

@@ -28,22 +28,28 @@ BEGIN
     -- 3. Vérifier que le montant est suffisant
     IF montant_utilisateur < montant_transac THEN
         -- Annuler la transaction en attente
+
+        PERFORM set_config('myapp.allow_modify_transac', 'on', true);
         UPDATE Transac
         SET statutTransaction = 'annulé'
         WHERE idPanier = panierId
-          AND statutTransaction = 'en attente';
+        AND statutTransaction = 'en attente';
+        PERFORM set_config('myapp.allow_modify_transac', 'off', true);
 
         -- Créer une nouvelle transaction en attente
+        PERFORM set_config('myapp.allow_create_transac', 'on', true);
         INSERT INTO Transac (montant, statutTransaction, idPanier)
         VALUES (montant_transac, 'en attente', panierId);
-
+        PERFORM set_config('myapp.allow_create_transac', 'off', true);
         RAISE NOTICE 'Montant insuffisant. Requis : %, fourni : %. Nouvelle transaction créée en attente.', montant_transac, montant_utilisateur;
     ELSE
         -- Valider la transaction
+        PERFORM set_config('myapp.allow_modify_transac', 'on', true);
         UPDATE Transac
         SET statutTransaction = 'validé'
         WHERE idPanier = panierId
           AND statutTransaction = 'en attente';
+        PERFORM set_config('myapp.allow_modify_transac', 'off', true);
 
         RAISE NOTICE 'Transaction validée pour le panier %, utilisateur %', panierId, userId;
     END IF;

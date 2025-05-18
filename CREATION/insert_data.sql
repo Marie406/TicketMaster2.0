@@ -9,11 +9,16 @@
 \COPY Siege FROM 'CREATION/bdd/sieges.csv' DELIMITER ';' CSV HEADER;
 \COPY AvoirLieu FROM 'CREATION/bdd/avoir_lieu.csv' DELIMITER ';' CSV HEADER;
 \COPY Participe FROM 'CREATION/bdd/participe.csv' DELIMITER ';' CSV HEADER;
+SELECT set_config('myapp.allow_create_sv', 'on', true);
 \COPY SessionVente FROM 'CREATION/bdd/sessions_ventes.csv' DELIMITER ';' CSV HEADER;
+SELECT set_config('myapp.allow_create_sv', 'off', true);
 
--- pour toutes les tables qui ont une clé primaire SERIAL et qui ont 
+
+-- pour toutes les tables qui ont une clé primaire SERIAL et qui ont
 --reçu des données on maj la val du serial
 SELECT setval('artiste_idartiste_seq', (SELECT MAX(idArtiste) FROM Artiste));
 SELECT setval('concert_idevent_seq', (SELECT MAX(idEvent) FROM Concert));
 SELECT setval('utilisateur_iduser_seq', (SELECT MAX(idUser) FROM Utilisateur));
+SELECT set_config('myapp.allow_modify_sv', 'on', true);
 SELECT setval('sessionvente_idsession_seq', (SELECT MAX(idSession) FROM SessionVente));
+SELECT set_config('myapp.allow_modify_sv', 'off', true);

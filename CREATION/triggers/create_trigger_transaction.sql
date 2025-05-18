@@ -87,8 +87,11 @@ BEGIN
     total := total - reduction;
 
     -- Insérer la transaction avec le montant calculé
+    PERFORM set_config('myapp.allow_create_transac', 'on', true);
     INSERT INTO Transac(montant, statutTransaction, idPanier)
     VALUES (total, 'en attente', idPanierInput);
+    PERFORM set_config('myapp.allow_create_transac', 'off', true);
+
 END;
 $$ LANGUAGE plpgsql;
 
@@ -110,8 +113,11 @@ BEGIN
         END IF;
 
         -- Insérer une réservation liée à la transaction
+        PERFORM set_config('myapp.allow_create_transac', 'on', true);
         INSERT INTO Reservation(dateReservation, idUser, idTransaction)
         VALUES (NOW(), user_id, NEW.idTransaction);
+        PERFORM set_config('myapp.allow_create_transac', 'off', true);
+
     END IF;
 
     RETURN NEW;
@@ -123,9 +129,11 @@ CREATE OR REPLACE FUNCTION marquer_billets_vendus()
 RETURNS TRIGGER AS $$
 BEGIN
     IF OLD.statutTransaction = 'en attente' AND NEW.statutTransaction = 'validé' THEN
+        PERFORM set_config('myapp.allow_status_change', 'on', true);
         UPDATE Billet
         SET statutBillet = 'vendu'
         WHERE idPanier = NEW.idPanier;
+        PERFORM set_config('myapp.allow_status_change', 'off', true);
 
         RAISE NOTICE 'Billets associés au panier % marqués comme vendus.', NEW.idPanier;
     END IF;
@@ -146,11 +154,13 @@ BEGIN
 
     -- Mettre à jour le statut SAS si l'utilisateur a été trouvé
     IF user_id IS NOT NULL THEN
+        PERFORM set_config('myapp.allow_modify_sas', 'on', true);
         UPDATE SAS
         SET statusSAS = 'termine',
             sortieSAS = NOW()
         WHERE idUser = user_id
           AND statusSAS = 'en cours'; -- Ne pas modifier ceux déjà terminés ou expulsés
+        PERFORM set_config('myapp.allow_modify_sas', 'off', true);
     END IF;
 
     RETURN NEW;

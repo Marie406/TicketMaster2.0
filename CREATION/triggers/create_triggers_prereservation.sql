@@ -1,24 +1,28 @@
-DROP TRIGGER IF EXISTS trigger_billets_en_vente ON PreReservation;
+DROP TRIGGER IF EXISTS trigger_remettre_billets_en_vente ON PreReservation;
 
 --CREATE OR REPLACE FUNCTION remettre_billets_en_vente()
 DROP TRIGGER IF EXISTS trigger_Prereservations_en_vente ON PreReservation;
 DROP TRIGGER IF EXISTS trigger_verrou_modification_prereservation ON PreReservation;
 DROP TRIGGER IF EXISTS trigger_verrou_creation_prereservation ON PreReservation;
 
-CREATE OR REPLACE FUNCTION remettre_Prereservations_en_vente()
+CREATE OR REPLACE FUNCTION remettre_billets_en_vente()
 RETURNS TRIGGER AS $$
 BEGIN
-        UPDATE Prereservation
-        SET statutPrereservation = 'en vente',
+        PERFORM set_config('myapp.allow_status_change', 'on', true);
+        PERFORM set_config('myapp.allow_idpanier_change', 'on', true);
+        UPDATE Billet
+        SET statutBillet = 'en vente',
             idPanier = NULL
         WHERE idPanier = OLD.idPanier;
+        PERFORM set_config('myapp.allow_status_change', 'off', true);
+        PERFORM set_config('myapp.allow_idpanier_change', 'off', true);
 
         RAISE NOTICE 'Prereservations associés au panier % remis en vente.', OLD.idPanier;
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER trigger_Prereservations_en_vente
+CREATE TRIGGER trigger_remettre_billets_en_vente
 AFTER DELETE ON PreReservation
 FOR EACH ROW
 EXECUTE FUNCTION remettre_Prereservations_en_vente();
@@ -36,7 +40,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 CREATE TRIGGER trigger_verrou_modification_prereservation
-BEFORE UPDATE ON Prereservation
+BEFORE UPDATE ON PreReservation
 FOR EACH ROW
 EXECUTE FUNCTION verrouiller_modification_prereservation();
 
@@ -52,6 +56,6 @@ END;
 $$ LANGUAGE plpgsql;
 
 CREATE TRIGGER trigger_verrou_creation_prereservation
-BEFORE INSERT ON Prereservation
+BEFORE INSERT ON PreReservation
 FOR EACH ROW
 EXECUTE FUNCTION verrouiller_creation_prereservation();

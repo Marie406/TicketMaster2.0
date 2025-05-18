@@ -49,8 +49,10 @@ BEGIN
     END IF;
 
     -- Insertion dans la file
+    PERFORM set_config('myapp.allow_create_attendre', 'on', true);
     INSERT INTO Attendre(idQueue, idUser, rang)
     VALUES (idFile, idUtilisateur, rang_max + 1);
+    PERFORM set_config('myapp.allow_create_attendre', 'off', true);
 
     RAISE NOTICE 'Utilisateur "%" ajouté à la file active de l''événement "%".', idUtilisateur, id_event_var;
 END;
@@ -98,6 +100,7 @@ CREATE OR REPLACE FUNCTION modifier_session_vente(
 )
 RETURNS VOID AS $$
 BEGIN
+    PERFORM set_config('myapp.allow_modify_sv', 'on', true);
     UPDATE SessionVente
     SET dateDebutSession = p_dateDebut,
         dateFinSession = p_dateFin,
@@ -106,6 +109,7 @@ BEGIN
         nbMaxBilletsAchetesVIP = p_maxVIP,
         nbMaxBilletsAchetesRegular = p_maxRegular
     WHERE idSession = p_idSession;
+    PERFORM set_config('myapp.allow_modify_sv', 'off', true);
 END;
 $$ LANGUAGE plpgsql;
 
