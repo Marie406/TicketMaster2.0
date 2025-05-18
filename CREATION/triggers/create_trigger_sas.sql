@@ -53,6 +53,7 @@ BEGIN
     INSERT INTO PreReservation (idUser, idSession)
     VALUES (NEW.idUser, v_idSession);
     -- la date de création est automatiquement initialisée avec TIMESTAMP NOT NULL DEFAULT NOW()
+    PERFORMS informerUtilisateurOptionsAchat(NEW.idUSER, v_idSession);
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;

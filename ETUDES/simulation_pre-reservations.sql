@@ -251,6 +251,46 @@ $$ LANGUAGE plpgsql;
 
 
 
+CREATE OR REPLACE FUNCTION preReserverAvecEmail(
+    emailUser VARCHAR,
+    descriptionEvent TEXT,
+    demandes JSONB
+) RETURNS VOID AS $$
+DECLARE
+    idUserFound INT;
+    idEventFound INT;
+    idQueueFound INT;
+BEGIN
+    -- Récupérer l'identifiant de l'utilisateur
+    idUserFound := getUserIdByEmail(emailUser);
+
+    -- Récupérer l'identifiant de l'événement
+    idEventFound := getEventIdByDescription(descriptionEvent);
+
+    -- Obtenir l'identifiant de la file d'attente active
+    idQueueFound := get_active_queue_for_event(idEventFound);
+
+    -- Vérifier que l'utilisateur est bien dans le SAS associé à cette file
+    IF NOT EXISTS (
+        SELECT 1 FROM SAS s
+        WHERE s.idQueue = idQueueFound AND s.idUser = idUserFound
+            AND statusSAS = 'en cours'
+    ) THEN
+        RAISE NOTICE 'Utilisateur % non présent dans le SAS de la file % pour l''événement %', idUserFound, idQueueFound, descriptionEvent;
+        RAISE NOTICE 'La pré-réservation ne peut aboutir';
+        RETURN;
+    END IF;
+
+    -- Appel de la fonction de pré-réservation
+    PERFORM creerPreReservation(idUserFound, idQueueFound, demandes);
+
+END;
+$$ LANGUAGE plpgsql;
+
+SELECT idPanier
+FROM PreReservation
+WHERE idUser = getUserIdByEmail(emailUser);
+
 
 --test avec un nb de billets raisonnable et pour un utilisateur qui est dans le sas
 --SELECT preReserverAvecEmail('daniel@email.com','Tournee mondiale de Stray Kids','{"CAT_3": 2, "CAT_4": 2}'::jsonb);
