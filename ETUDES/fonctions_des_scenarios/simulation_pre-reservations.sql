@@ -217,4 +217,3 @@ BEGIN
     PERFORM preReserver(idPanierFound, demandes);
 END;
 $$ LANGUAGE plpgsql;
-

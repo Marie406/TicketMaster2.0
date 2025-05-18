@@ -4,6 +4,7 @@ DROP TRIGGER IF EXISTS trigger_billets_vendus ON Transac;
 DROP TRIGGER IF EXISTS trigger_verrou_modification_transaction ON Transac;
 DROP TRIGGER IF EXISTS trigger_verrou_creation_transaction ON Transac;
 DROP TRIGGER IF EXISTS trigger_maj_statut_sas ON Transac;
+--DROP TRIGGER IF EXISTS trg_supprimer_prereservation ON Transac;
 
 CREATE OR REPLACE FUNCTION verrouiller_modification_transaction()
 RETURNS TRIGGER AS $$
@@ -186,3 +187,23 @@ WHEN (
 )
 EXECUTE FUNCTION maj_statut_sas_apres_validation_transac();
 
+
+-- CREATE OR REPLACE FUNCTION supprimer_prereservation_transaction()
+-- RETURNS TRIGGER AS $$
+-- BEGIN
+--     IF NEW.statutTransaction IN ('annulé', 'validé') THEN
+--         DELETE FROM PreReservation
+--         WHERE idPanier = NEW.idPanier;
+--     END IF;
+--     RETURN NEW;
+-- END;
+-- $$ LANGUAGE plpgsql;
+--
+--
+-- DROP TRIGGER IF EXISTS trg_supprimer_prereservation ON Transac;
+--
+-- CREATE TRIGGER trg_supprimer_prereservation
+-- AFTER UPDATE OF statutTransaction ON Transac
+-- FOR EACH ROW
+-- WHEN (NEW.statutTransaction IN ('annulé', 'validé'))
+-- EXECUTE FUNCTION supprimer_prereservation_transaction();
