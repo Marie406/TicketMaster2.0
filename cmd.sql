@@ -1,7 +1,7 @@
 \i CREATION/creation_tables.sql
 \i CREATION/indexs.sql
 \i CREATION/fonctions_communes.sql
-\i CREATION/all_triggers.sql
+\i CREATION/create_triggers.sql
 \i CREATION/insert_data.sql
 \i ETUDES/creation_utilisateurs.sql
 \i ETUDES/creation_evenements.sql

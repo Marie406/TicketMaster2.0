@@ -71,12 +71,6 @@ PRIMARY KEY (idCategorie, idLieu),
 UNIQUE(idCategorie)
 );
 
--- CREATE TABLE Siege (
---     idSiege INT PRIMARY KEY,
---     numSiege INTEGER NOT NULL,
---     idCategorie INT REFERENCES CategorieSiege(idCategorie) ON DELETE CASCADE
--- );
-
 CREATE TABLE Siege (
     idSiege INT UNIQUE,
     numSiege INTEGER NOT NULL,
