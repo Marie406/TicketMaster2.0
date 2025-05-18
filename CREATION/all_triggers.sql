@@ -12,3 +12,5 @@
 \i CREATION/triggers/create_triggers_file.sql
 \i CREATION/triggers/create_trigger_transaction.sql
 \i CREATION/triggers/create_trigger_reservation.sql
+\i CREATION/triggers/create_trigger_prereservation.sql
+\i CREATION/triggers/create_trigger_sas.sql

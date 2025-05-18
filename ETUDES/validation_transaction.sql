@@ -27,27 +27,38 @@ BEGIN
 
     -- 3. Vérifier que le montant est suffisant
     IF montant_utilisateur < montant_transac THEN
-        RAISE EXCEPTION 'Montant insuffisant. Requis : %, fourni : %', montant_transac, montant_utilisateur;
+        -- Annuler la transaction en attente
+        UPDATE Transac
+        SET statutTransaction = 'annulé'
+        WHERE idPanier = panierId
+          AND statutTransaction = 'en attente';
+
+        -- Créer une nouvelle transaction en attente
+        INSERT INTO Transac (montant, statutTransaction, idPanier)
+        VALUES (montant_transac, 'en attente', panierId);
+
+        RAISE NOTICE 'Montant insuffisant. Requis : %, fourni : %. Nouvelle transaction créée en attente.', montant_transac, montant_utilisateur;
+    ELSE
+        -- Valider la transaction
+        UPDATE Transac
+        SET statutTransaction = 'validé'
+        WHERE idPanier = panierId
+          AND statutTransaction = 'en attente';
+
+        RAISE NOTICE 'Transaction validée pour le panier %, utilisateur %', panierId, userId;
     END IF;
-
-    -- 4. Valider la transaction
-    UPDATE Transac
-    SET statutTransaction = 'validé' --les triggers deja definis vont maj le statut des billets
-    WHERE idPanier = panierId;
-
-    RAISE NOTICE 'Transaction validée pour le panier %, utilisateur %', panierId, userId;
 END;
 $$ LANGUAGE plpgsql;
 
 
 --test qd on est en position de faire une transaction et qu'on donne un montant suffisant
-SELECT effectuerTransaction('daniel@email.com', 264);
+--SELECT effectuerTransaction('daniel@email.com', 264);
 --pr verif que ça fait bien ce qu'on veut
 --select * from billet where statutBillet not in ('en vente', 'dans un panier');
 --select * from transaction;
 
 -- test montant insuffisant
---SELECT effectuerTransaction('daniel@email.com', 60);
+SELECT effectuerTransaction('daniel@email.com', 60);
 
 --test pas de transaction en attente
 --SELECT effectuerTransaction('hyunjin@email.com', 400);

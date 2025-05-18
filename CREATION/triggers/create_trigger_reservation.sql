@@ -46,24 +46,3 @@ AFTER UPDATE OF statutTransaction ON Transac
 FOR EACH ROW
 EXECUTE FUNCTION marquer_billets_vendus();
 
-
-CREATE OR REPLACE FUNCTION remettre_billets_en_vente()
-RETURNS TRIGGER AS $$
-BEGIN
-    IF OLD.statutTransaction = 'en attente' AND NEW.statutTransaction = 'annulé' THEN
-        UPDATE Billet
-        SET statutBillet = 'en vente',
-            idPanier = NULL
-        WHERE idPanier = NEW.idPanier;
-
-        RAISE NOTICE 'Billets associés au panier % remis en vente.', NEW.idPanier;
-    END IF;
-
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE TRIGGER trigger_billets_en_vente
-AFTER UPDATE OF statutTransaction ON Transac
-FOR EACH ROW
-EXECUTE FUNCTION remettre_billets_en_vente();
