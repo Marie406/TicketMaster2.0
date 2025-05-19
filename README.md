@@ -10,7 +10,7 @@ Le fichier main.sql est chargé de remplir la base de données avec toutes les t
 
 Ensuite pour exécuter les différents scénarios on peut utiliser les commandes :
 
-`\i ETUDES/script_verrous.sql`
+`\i ETUDES/script_commun_init.sql` (celui-ci est directement exécuté dans le main donc pas besoin de relancer la commande, il simule la création de nouveaux utilisateurs et événements)
 
 `\i ETUDES/script_faire_queue.sql`
 

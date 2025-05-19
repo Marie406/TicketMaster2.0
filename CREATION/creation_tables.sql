@@ -34,7 +34,8 @@ idEvent SERIAL PRIMARY KEY,
 descriptionEvent TEXT NOT NULL,
 niveauDemandeAttendu NUMERIC(3,2) DEFAULT 1.00,
 CHECK (niveauDemandeAttendu >= 1), --pour garder des prix "raisonnables"
-CHECK (niveauDemandeAttendu < 2)
+CHECK (niveauDemandeAttendu < 2),
+UNIQUE(descriptionEvent)
 );
 
 CREATE TABLE Calendrier (

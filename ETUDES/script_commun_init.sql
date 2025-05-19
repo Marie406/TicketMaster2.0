@@ -26,8 +26,7 @@ SELECT * FROM Utilisateur;
 SELECT ajouter_artiste('Taemin', 'Kpop');
 SELECT ajouter_artiste('GOT7', 'Kpop');
 
--- permet de vérifier que Stray Kids n'est pas ajouté qd il a déjà été créer
---via les donnees du csv , que BewhY est bien crée et que les ajouts
+-- permet de vérifier que BewhY est bien crée et que les ajouts
 -- d'artistes de la fct ajouter_artiste fonctionnent
 -- permet aussi de verif qu'on peut bien ajouter plusieurs artistes à un concert
 -- 3. création des evenements
@@ -38,6 +37,7 @@ SELECT creer_evenement('Concert en France de Stray Kids', ARRAY['Stray Kids'], 1
 SELECT creer_evenement('Gala des Pieces jaunes 2026', ARRAY['GDragon', 'GOT7', 'Stray Kids', 'BewhY'], 1.3);
 
 SELECT * FROM Participe;
+SELECT * FROM Artiste;
 
 --organisation des concerts avec date, lieu et heure
 SELECT organiser_concert('Tournee japonaise de Taemin', DATE '2025-07-12', 17, TIME '19:30');
